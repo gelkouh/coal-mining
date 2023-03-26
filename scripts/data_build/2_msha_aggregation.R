@@ -5,6 +5,7 @@ while(basename(root) != "coal-mining") { # this is the name of your project dire
   root <- dirname(root)
 }
 source(file.path(root, "data.R"))
+ddir <- file.path(dir, "data")
 
 library(tidyverse)
 library(lubridate)
