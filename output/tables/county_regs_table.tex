@@ -1,0 +1,26 @@
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{l c c c c c c c c}
+\hline
+ & \multicolumn{2}{c}{Avg. Weekly Wage} & \multicolumn{2}{c}{Productivity} & \multicolumn{2}{c}{S\&S Viol. Rate} & \multicolumn{2}{c}{Traum. Inj. Rate} \\
+\cline{2-3} \cline{4-5} \cline{6-7} \cline{8-9}
+ & Model 1 & Model 2 & Model 3 & Model 4 & Model 5 & Model 6 & Model 7 & Model 8 \\
+\hline
+County HHI & $-0.066^{***}$ & $-0.037^{***}$ & $0.193^{***}$ & $-0.068^{**}$ & $-0.000^{***}$ & $-0.000$  & $-0.000$  & $-0.000$  \\
+           & $(0.003)$      & $(0.005)$      & $(0.017)$     & $(0.026)$     & $(0.000)$      & $(0.000)$ & $(0.000)$ & $(0.000)$ \\
+\hline
+County FE  & NO             & YES            & NO            & YES           & NO             & YES       & NO        & YES       \\
+Quarter FE & NO             & YES            & NO            & YES           & NO             & YES       & NO        & YES       \\
+R$^2$      & $0.088$        & $0.486$        & $0.016$       & $0.540$       & $0.015$        & $0.372$   & $0.000$   & $0.086$   \\
+Adj. R$^2$ & $0.088$        & $0.468$        & $0.016$       & $0.525$       & $0.015$        & $0.351$   & $0.000$   & $0.056$   \\
+Num. obs.  & $5927$         & $5927$         & $6398$        & $6398$        & $6398$         & $6398$    & $6398$    & $6398$    \\
+RMSE       & $647.761$      & $494.649$      & $4588.916$    & $3188.083$    & $0.669$        & $0.543$   & $0.061$   & $0.059$   \\
+\hline
+\multicolumn{9}{l}{\scriptsize{$^{***}p<0.001$; $^{**}p<0.01$; $^{*}p<0.05$}}
+\end{tabular}
+\caption{County-Level Regression Estimates}
+\label{ols_hhi_county}
+\end{center}
+\end{table}
+
