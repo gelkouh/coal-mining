@@ -1,4 +1,4 @@
-# Last updated: Mar 23, 2023
+# Last updated: Apr 5, 2023
 
 root <- getwd()
 while(basename(root) != "coal-mining") { # this is the name of your project directory you want to use
@@ -18,7 +18,7 @@ eia_df <- read_csv(file.path(ddir, "cleaned", "coalpublic_1993_2021_mines.csv"))
          union_code = `Union Code`,
          company_type = `Company Type`,
          production_tons_eia = `Production (short tons)`) %>%
-  select(MINE_ID, year, mine_name_eia, status_eia, type, union_code, union, company_type, production_tons_eia) %>%
+  dplyr::select(MINE_ID, year, mine_name_eia, status_eia, type, union_code, union, company_type, production_tons_eia) %>%
   mutate(MINE_ID = as.double(MINE_ID)) %>%
   filter(!is.na(MINE_ID)) %>%
   group_by(MINE_ID) %>%
@@ -27,7 +27,16 @@ eia_df <- read_csv(file.path(ddir, "cleaned", "coalpublic_1993_2021_mines.csv"))
          union_change_year = ifelse(union_change_direction == 0, 0, 1),
          union_change_direction = ifelse(is.na(union_change_direction), 0, union_change_direction),
          union_change_year = ifelse(is.na(union_change_year), 0, union_change_year),
-         subsidiary_indicator = ifelse(company_type == "Operating Subsidiary", 1, 0))
+         subsidiary_indicator = ifelse(company_type == "Operating Subsidiary", 1, 0),
+         # 2012 EIA data seems to have some errors where 6 mines that are union mines in 2011 and 2013 are marked as nonunion in 2012
+         # Internet for news articles about union status at these mines around 2012 returned no relevant results 
+         union = ifelse((MINE_ID == 100851 & year == 2012) | 
+                          (MINE_ID == 4200121 & year == 2012) | 
+                          (MINE_ID == 4601537 & year == 2012) | 
+                          (MINE_ID == 4601816 & year == 2012) | 
+                          (MINE_ID == 4606618 & year == 2012) | 
+                          (MINE_ID == 4609152 & year == 2012), 
+                        1, union))
 
 msha_panel_years <- read_csv(file.path(ddir, "cleaned", "msha_panel_years.csv"))
 msha_panel_quarters <- read_csv(file.path(ddir, "cleaned", "msha_panel_quarters.csv"))
@@ -152,7 +161,7 @@ mine_panel_quarters <- mutate(eia_df, quarter = 1) %>%
 # (I will trim the top 1% of mine-quarter observations)
 # (Christensen et al. (2017))
 # First make sure no duplicated mine-quarters and mine-years
-if (nrow(mine_panel_quarters) == nrow(mine_panel_quarters %>% select(MINE_ID, year, quarter) %>% distinct())) {
+if (nrow(mine_panel_quarters) == nrow(mine_panel_quarters %>% dplyr::select(MINE_ID, year, quarter) %>% distinct())) {
   mine_panel_quarters <- mine_panel_quarters %>%
     mutate(productivity_top1pct = ifelse(productivity >= quantile(mine_panel_quarters$productivity, .99, na.rm = TRUE)[[1]],
                                              1, 0))
@@ -162,7 +171,7 @@ if (nrow(mine_panel_quarters) == nrow(mine_panel_quarters %>% select(MINE_ID, ye
   print('WARNING: DUPLICATE OBSERVATIONS')
 }
 
-if (nrow(mine_panel_years) == nrow(mine_panel_years %>% select(MINE_ID, year) %>% distinct())) {
+if (nrow(mine_panel_years) == nrow(mine_panel_years %>% dplyr::select(MINE_ID, year) %>% distinct())) {
   mine_panel_years <- mine_panel_years %>%
     mutate(productivity_top1pct = ifelse(productivity >= quantile(mine_panel_years$productivity, .99, na.rm = TRUE)[[1]],
                                          1, 0))
