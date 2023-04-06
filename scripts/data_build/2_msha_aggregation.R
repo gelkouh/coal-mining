@@ -17,8 +17,8 @@ library(reshape2)
 accidents_1 <- read.delim(file.path(ddir, "msha", "Accidents.txt"), sep = "|")
 #conferences_4 <- read.delim(file.path(ddir, "msha", "Conferences.txt"), sep = "|")
 #civilpenalties_5 <- read.delim(file.path(ddir, "msha", "CivilPenaltyDocketsDecisions.txt"), sep = "|")
-#contractorprod_quarterly_6 <- read.delim(file.path(ddir, "msha", "ContractorProdQuarterly.txt"), sep = "|")
-#contractorprod_yearly_7 <- read.delim(file.path(ddir, "msha", "ContractorProdYearly.txt"), sep = "|")
+contractorprod_quarterly_6 <- read.delim(file.path(ddir, "msha", "ContractorProdQuarterly.txt"), sep = "|")
+contractorprod_yearly_7 <- read.delim(file.path(ddir, "msha", "ContractorProdYearly.txt"), sep = "|")
 controlleroperatorhistory_8 <- read.delim(file.path(ddir, "msha", "ControllerOperatorHistory.txt"), sep = "|")
 minesprod_yearly_9 <- read.delim(file.path(ddir, "msha", "MinesProdYearly.txt"), sep = "|")
 minesprod_quarterly_10 <- read.delim(file.path(ddir, "msha", "MinesProdQuarterly.txt"), sep = "|")
@@ -130,6 +130,95 @@ accidents_cleaned_years <- accidents_1_temp %>%
   arrange(MINE_ID, year)
 
 ##----------##
+# contractorprod_quarterly_6 - done
+##----------##
+
+# Final datasets
+#   operator mines: geography x year_quarter (year) x production x employment 
+#   operator mines: year_quarter (year) x production x employment 
+#   contractor mines: year_quarter (year) x production x employment 
+# Compare total coal production reported by Operators vs. Contractors (merge in ownership data)
+# (vs. Underground, Bituminous coal production reported by Operators)
+# Surface and underground coal production := minesprod (SUBUNIT == ((01) Underground operation;  
+#                                                                   (02) Surface operation at underground mine;
+#                                                                   (03) Strip, quarry or open pit;
+#                                                                   (04) Auger (Coal only);
+#                                                                   (05) Culm bank or refuse pile (Coal only);
+#                                                                   (06) Dredge;  
+#                                                                   (12) Other surface (Metal/Non-Metal only))
+#                                                               != ((17) Independent shop or yard;  
+#                                                                   (30) Mill operation, preparation plant or breaker;
+#                                                                   (99) Office workers at mine site)
+#                                                       AND
+#                                                       COAL_METAL_IND (Identifies if the mine is a Coal or Metal/Non-Metal mine) 
+#                                                               == COAL)
+# Contractor coal production := minesprod (SUBUNIT == ((01) Underground;
+#                                                      (02) Surface at underground;  
+#                                                      (03) Strip, quarry, open pit;  
+#                                                      (04) Auger;  
+#                                                      (05) Culm bank/refuse pile;  
+#                                                      (06) Dredge;  
+#                                                      (12) Other mining)
+#                                                  != ((17) Independent shops or yards;
+#                                                      (30) Mill operation/preparation plant;
+#                                                      (99) Office workers at mine site)
+#                                          AND
+#                                          COAL_METAL_IND (Identifies if the employment and production are being reported for a Coal or Metal/Non-Metal mine)
+#                                                      == COAL)
+
+contractor_production_quarters <- contractorprod_quarterly_6 %>%
+  rename(year = CAL_YR,
+         quarter = CAL_QTR) %>%
+  filter(SUBUNIT_CD %in% c(1, 2, 3, 4, 5, 6, 12),
+         COAL_METAL_IND == "C") %>%
+  group_by(year, quarter) %>%
+  summarize(labor_hours = sum(HOURS_WORKED, na.rm = TRUE),
+            coal_production_tons = sum(COAL_PRODUCTION, na.rm = TRUE),
+            avg_employee_count = sum(AVG_EMPLOYEE_CNT, na.rm = TRUE)) %>%
+  mutate(zero_production_quarter = ifelse(labor_hours == 0 | coal_production_tons == 0, 
+                                          1, 0),
+         FTEs = labor_hours/500,
+         productivity = ifelse(zero_production_quarter == 1, 0, 2000*(coal_production_tons/labor_hours)),
+         size_100FTEs = FTEs/100,
+         size_100employees = avg_employee_count/100,
+         size_1milliontons = coal_production_tons/1000000)
+
+##----------##
+# contractorprod_yearly_7 - done 
+##----------##
+
+# Final dataset, contractor mines: year_quarter (year) x production x employment 
+# Contractor coal production := minesprod (SUBUNIT == ((01) Underground;
+#                                                      (02) Surface at underground;  
+#                                                      (03) Strip, quarry, open pit;  
+#                                                      (04) Auger;  
+#                                                      (05) Culm bank/refuse pile;  
+#                                                      (06) Dredge;  
+#                                                      (12) Other mining)
+#                                                  != ((17) Independent shops or yards;
+#                                                      (30) Mill operation/preparation plant;
+#                                                      (99) Office workers at mine site)
+#                                          AND
+#                                          COAL_METAL_IND (Identifies if the employment and production are being reported for a Coal or Metal/Non-Metal mine)
+#                                                      == COAL)
+
+contractor_production_years <- contractorprod_yearly_7 %>%
+  rename(year = CALENDAR_YR) %>%
+  filter(SUBUNIT_CD %in% c(1, 2, 3, 4, 5, 6, 12),
+         COAL_METAL_IND == "C") %>%
+  group_by(year) %>%
+  summarize(labor_hours = sum(ANNUAL_HOURS, na.rm = TRUE),
+            coal_production_tons = sum(ANNUAL_COAL_PRODUCTION, na.rm = TRUE),
+            avg_employee_count = sum(AVG_EMPLOYEE_CNT, na.rm = TRUE)) %>%
+  mutate(zero_production_year = ifelse(labor_hours == 0 | coal_production_tons == 0, 
+                                       1, 0),
+         FTEs = labor_hours/2000,
+         productivity = ifelse(zero_production_year == 1, 0, 2000*(coal_production_tons/labor_hours)),
+         size_100FTEs = FTEs/100,
+         size_100employees = avg_employee_count/100,
+         size_1milliontons = coal_production_tons/1000000)
+
+##----------##
 # controlleroperatorhistory_8 - done
 ##----------##
 # Controller appears to be the (controlling) owner
@@ -142,13 +231,13 @@ accidents_cleaned_years <- accidents_1_temp %>%
 
 # Controllers
 controller_id_names <- controlleroperatorhistory_8 %>%
-  select(CONTROLLER_ID, CONTROLLER_NAME) %>%
+  dplyr::select(CONTROLLER_ID, CONTROLLER_NAME) %>%
   unique() %>%
   group_by(CONTROLLER_ID) %>%
   summarize(CONTROLLER_NAMES = paste0(CONTROLLER_NAME, collapse = "; "))
 
 controller_id_types <- controlleroperatorhistory_8 %>%
-  select(CONTROLLER_ID, CONTROLLER_TYPE) %>%
+  dplyr::select(CONTROLLER_ID, CONTROLLER_TYPE) %>%
   unique() %>%
   group_by(CONTROLLER_ID) %>%
   summarize(CONTROLLER_TYPES = paste0(CONTROLLER_TYPE, collapse = "; ")) %>%
@@ -205,7 +294,7 @@ operator_mine_age <- controlleroperatorhistory_8 %>%
   mutate(first_year = ifelse(first_year < 1970, 1970, first_year))
 
 operator_id_names <- controlleroperatorhistory_8 %>%
-  select(OPERATOR_ID, OPERATOR_NAME) %>%
+  dplyr::select(OPERATOR_ID, OPERATOR_NAME) %>%
   unique() %>%
   group_by(OPERATOR_ID) %>%
   summarize(OPERATOR_NAMES = paste0(OPERATOR_NAME, collapse = "; "))
@@ -301,6 +390,57 @@ production_cleaned_years <- minesprod_yearly_9 %>%
          size_1milliontons = coal_production_tons/1000000) %>%
   left_join(subunit_years, by = c("MINE_ID", "year"))
 
+# Final datasets
+#   operator mines: geography x year_quarter (year) x production x employment 
+#   operator mines: year_quarter (year) x production x employment 
+# Surface and underground coal production := minesprod (SUBUNIT == ((01) Underground operation;  
+#                                                                   (02) Surface operation at underground mine;
+#                                                                   (03) Strip, quarry or open pit;
+#                                                                   (04) Auger (Coal only);
+#                                                                   (05) Culm bank or refuse pile (Coal only);
+#                                                                   (06) Dredge;  
+#                                                                   (12) Other surface (Metal/Non-Metal only))
+#                                                               != ((17) Independent shop or yard;  
+#                                                                   (30) Mill operation, preparation plant or breaker;
+#                                                                   (99) Office workers at mine site)
+#                                                       AND
+#                                                       COAL_METAL_IND (Identifies if the mine is a Coal or Metal/Non-Metal mine) 
+#                                                               == COAL)
+
+# intermediary dataset for operator mines: geography x year_quarter (year) x production x employment 
+all_mines_production_years <- minesprod_yearly_9 %>%
+  rename(year = CALENDAR_YR) %>%
+  filter(SUBUNIT_CD %in% c(1, 2, 3, 4, 5, 6, 12),
+         C_M_IND == "C") %>%
+  group_by(MINE_ID, year) %>%
+  summarize(labor_hours = sum(ANNUAL_HRS, na.rm = TRUE),
+            coal_production_tons = sum(ANNUAL_COAL_PROD, na.rm = TRUE),
+            avg_employee_count = sum(AVG_ANNUAL_EMPL, na.rm = TRUE)) %>%
+  mutate(zero_production_year = ifelse(labor_hours == 0 | coal_production_tons == 0, 
+                                       1, 0),
+         FTEs = labor_hours/2000,
+         productivity = ifelse(zero_production_year == 1, 0, 2000*(coal_production_tons/labor_hours)),
+         size_100FTEs = FTEs/100,
+         size_100employees = avg_employee_count/100,
+         size_1milliontons = coal_production_tons/1000000)
+
+# operator mines: year_quarter (year) x production x employment 
+all_mines_agg_production_years <- minesprod_yearly_9 %>%
+  rename(year = CALENDAR_YR) %>%
+  filter(SUBUNIT_CD %in% c(1, 2, 3, 4, 5, 6, 12),
+         C_M_IND == "C") %>%
+  group_by(year) %>%
+  summarize(labor_hours = sum(ANNUAL_HRS, na.rm = TRUE),
+            coal_production_tons = sum(ANNUAL_COAL_PROD, na.rm = TRUE),
+            avg_employee_count = sum(AVG_ANNUAL_EMPL, na.rm = TRUE)) %>%
+  mutate(zero_production_year = ifelse(labor_hours == 0 | coal_production_tons == 0, 
+                                       1, 0),
+         FTEs = labor_hours/2000,
+         productivity = ifelse(zero_production_year == 1, 0, 2000*(coal_production_tons/labor_hours)),
+         size_100FTEs = FTEs/100,
+         size_100employees = avg_employee_count/100,
+         size_1milliontons = coal_production_tons/1000000)
+
 ##----------##
 # minesprod_quarterly_10 - done
 ##----------##
@@ -340,8 +480,61 @@ production_cleaned_quarters <- minesprod_quarterly_10 %>%
          size_1milliontons = coal_production_tons/1000000) %>%
   left_join(subunit_quarters, by = c("MINE_ID", "year", "quarter"))
 
+# Final datasets
+#   operator mines: geography x year_quarter (year) x production x employment 
+#   operator mines: year_quarter (year) x production x employment 
+# Surface and underground coal production := minesprod (SUBUNIT == ((01) Underground operation;  
+#                                                                   (02) Surface operation at underground mine;
+#                                                                   (03) Strip, quarry or open pit;
+#                                                                   (04) Auger (Coal only);
+#                                                                   (05) Culm bank or refuse pile (Coal only);
+#                                                                   (06) Dredge;  
+#                                                                   (12) Other surface (Metal/Non-Metal only))
+#                                                               != ((17) Independent shop or yard;  
+#                                                                   (30) Mill operation, preparation plant or breaker;
+#                                                                   (99) Office workers at mine site)
+#                                                       AND
+#                                                       COAL_METAL_IND (Identifies if the mine is a Coal or Metal/Non-Metal mine) 
+#                                                               == COAL)
+
+# intermediary dataset for operator mines: geography x year_quarter (year) x production x employment 
+all_mines_production_quarters <- minesprod_quarterly_10 %>%
+  rename(year = CAL_YR,
+         quarter = CAL_QTR) %>%
+  filter(SUBUNIT_CD %in% c(1, 2, 3, 4, 5, 6, 12),
+         COAL_METAL_IND == "C") %>%
+  group_by(MINE_ID, year, quarter) %>%
+  summarize(labor_hours = sum(HOURS_WORKED, na.rm = TRUE),
+            coal_production_tons = sum(COAL_PRODUCTION, na.rm = TRUE),
+            avg_employee_count = sum(AVG_EMPLOYEE_CNT, na.rm = TRUE)) %>%
+  mutate(zero_production_quarter = ifelse(labor_hours == 0 | coal_production_tons == 0, 
+                                          1, 0),
+         FTEs = labor_hours/500,
+         productivity = ifelse(zero_production_quarter == 1, 0, 2000*(coal_production_tons/labor_hours)),
+         size_100FTEs = FTEs/100,
+         size_100employees = avg_employee_count/100,
+         size_1milliontons = coal_production_tons/1000000)
+
+# operator mines: year_quarter (year) x production x employment 
+all_mines_agg_production_quarters <- minesprod_quarterly_10 %>%
+  rename(year = CAL_YR,
+         quarter = CAL_QTR) %>%
+  filter(SUBUNIT_CD %in% c(1, 2, 3, 4, 5, 6, 12),
+         COAL_METAL_IND == "C") %>%
+  group_by(year, quarter) %>%
+  summarize(labor_hours = sum(HOURS_WORKED, na.rm = TRUE),
+            coal_production_tons = sum(COAL_PRODUCTION, na.rm = TRUE),
+            avg_employee_count = sum(AVG_EMPLOYEE_CNT, na.rm = TRUE)) %>%
+  mutate(zero_production_quarter = ifelse(labor_hours == 0 | coal_production_tons == 0, 
+                                          1, 0),
+         FTEs = labor_hours/500,
+         productivity = ifelse(zero_production_quarter == 1, 0, 2000*(coal_production_tons/labor_hours)),
+         size_100FTEs = FTEs/100,
+         size_100employees = avg_employee_count/100,
+         size_1milliontons = coal_production_tons/1000000)
+
 ##----------##
-# inspections_11 - tbd
+# inspections_11 - for future project
 ##----------##
 # inspections_cleaned <- inspections_11 %>%
 #   mutate(inspection_date = mdy(INSPECTION_END_DT),
@@ -377,6 +570,14 @@ mines_cleaned <- mines_13 %>%
                 avg_mine_height_in, longitude, latitude, pillar_recovery_used, 
                 part_48_training_restriction, msha_office_code, district,
                 county, county_fips, state)
+
+mines_all <- mines_13 %>%
+  rename(longitude = LONGITUDE,
+         latitude = LATITUDE,
+         state = STATE,
+         county_fips = FIPS_CNTY_CD,
+         county = FIPS_CNTY_NM) %>%
+  dplyr::select(MINE_ID, longitude, latitude, county, county_fips, state)
 
 ##----------##
 # violations_17 - done
@@ -655,6 +856,7 @@ penalty_points_quarters <- assessedviolations_19 %>%
 ##----------##
 # Combine into single dataset - done
 ##----------##
+# Panel for underground, bituminous mines
 msha_panel_years <- accidents_cleaned_years %>%
   full_join(controller_operator_panel_years, by = c('MINE_ID', 'year')) %>%
   full_join(violations_cleaned_years, by = c('MINE_ID', 'year')) %>%
@@ -674,4 +876,26 @@ msha_panel_quarters <- accidents_cleaned_quarters %>%
   full_join(mines_cleaned, by = c('MINE_ID'))
 
 write_csv(msha_panel_quarters, file.path(ddir, "cleaned", "msha_panel_quarters.csv"))
+
+# Other datasets
+#   operator mines: geography x year_quarter (year) x production x employment 
+operator_mines_years <- all_mines_production_years %>%
+  left_join(controller_operator_panel_years, by = c('MINE_ID', 'year')) %>%
+  left_join(mines_all, by = c('MINE_ID'))
+
+write_csv(operator_mines_years, file.path(ddir, "cleaned", "operator_mines_years.csv"))
+
+operator_mines_quarters <- all_mines_production_quarters %>%
+  left_join(controller_operator_panel_quarters, by = c('MINE_ID', 'year', 'quarter')) %>%
+  left_join(mines_all, by = c('MINE_ID'))
+
+write_csv(operator_mines_quarters, file.path(ddir, "cleaned", "operator_mines_quarters.csv"))
+
+#   operator mines: year_quarter (year) x production x employment 
+write_csv(all_mines_agg_production_years, file.path(ddir, "cleaned", "operators_years.csv"))
+write_csv(all_mines_agg_production_quarters, file.path(ddir, "cleaned", "operators_quarters.csv"))
+
+#   contractor mines: year_quarter (year) x production x employment 
+write_csv(contractor_production_years, file.path(ddir, "cleaned", "contractors_years.csv"))
+write_csv(contractor_production_quarters, file.path(ddir, "cleaned", "contractors_quarters.csv"))
 
