@@ -33,6 +33,35 @@ mines_after_2015_df <- mine_panel_quarters_import %>%
   distinct() %>%
   mutate(active_after2015 = 1)
 
+hhi_county_level <- mine_panel_quarters_import %>%
+  group_by(year_quarter, county_fips, CONTROLLER_ID) %>%
+  summarize(controller_size_100employees_county = sum(size_100employees, na.rm = TRUE)) %>%
+  group_by(year_quarter, county_fips) %>%
+  mutate(controller_share_county = 100*controller_size_100employees_county/sum(controller_size_100employees_county, na.rm = TRUE)) %>%
+  summarize(hhi_county = sum(controller_share_county^2, na.rm = TRUE),
+            county_size_100employees = sum(controller_size_100employees_county, na.rm = TRUE))
+hhi_distn_fig <- ggplot(data = hhi_county_level, aes(x = hhi_county)) + 
+  geom_histogram(position = "dodge") + 
+  scale_fill_manual(values = c("#014d64","darkred","gray")) +
+  xlab("County HHI") +
+  ylab("Num. county-quarter observations") +
+  ggtitle("Distribution of County HHI: 2000-2021") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"),
+        panel.background = element_blank(),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.title = element_text(size = 10),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        plot.title = element_text(hjust = 0.5))
+hhi_distn_fig
+ggsave(file.path(outputdir, 'hhi_distn_fig.png'), 
+       plot = hhi_distn_fig, width = 8, height = 6)
+
 mine_panel_quarters <- mine_panel_quarters_import %>%
   left_join(mines_after_2015_df, by = "MINE_ID") %>%
   mutate(contested_violations = ifelse(is.na(contested_violations), 0, contested_violations)) %>%
@@ -40,58 +69,31 @@ mine_panel_quarters <- mine_panel_quarters_import %>%
   group_by(year_quarter, county_fips) %>%
   mutate(active_mines = n()) %>%
   ungroup() %>%
-  group_by(year_quarter, county_fips, CONTROLLER_ID) %>%
-  mutate(same_controller = n(),
-         controller_size_100employees_county = sum(size_100employees, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(pct_same_controller_county = same_controller/active_mines) %>%
-  group_by(year_quarter, county_fips) %>%
-  mutate(largest_pct_controller = max(pct_same_controller_county, na.rm = TRUE),
-         size_100employees_county = sum(size_100employees, na.rm = TRUE),
-         controller_share_county = 100*controller_size_100employees_county/size_100employees_county,
-         hhi_county = sum(controller_share_county^2, na.rm = TRUE)) %>%
-  ungroup() %>%
-  group_by(year_quarter, CONTROLLER_ID) %>%
-  mutate(controller_size_100employees_natl = sum(size_100employees, na.rm = TRUE)) %>%
-  ungroup() %>%
-  group_by(year_quarter) %>%
-  mutate(size_100employees_natl = sum(size_100employees, na.rm = TRUE),
-         controller_share_natl = 100*controller_size_100employees_natl/size_100employees_natl,
-         hhi_natl = sum(controller_share_natl^2, na.rm = TRUE)) %>%
-  ungroup()
+  left_join(hhi_county_level, by = c("year_quarter", "county_fips"))
 
 mine_panel_years <- mine_panel_years_import
 
 operator_mines_years <- read_csv(file.path(ddir, "cleaned", "operator_mines_years.csv")) %>%
   mutate(county_fips = paste0(state,county_fips))
 operator_mines_quarters <- read_csv(file.path(ddir, "cleaned", "operator_mines_quarters.csv")) %>%
-  mutate(county_fips = paste0(state,county_fips))
+  mutate(county_fips = paste0(state,county_fips),
+         quarter_fraction = (as.numeric(quarter)-1.0)*0.25,
+         year_quarter = as.numeric(year) + as.numeric(quarter_fraction))
+
+hhi_county_level_all_mines <- operator_mines_quarters %>%
+  group_by(year_quarter, county_fips, CONTROLLER_ID) %>%
+  summarize(controller_size_100employees_county = sum(size_100employees, na.rm = TRUE)) %>%
+  group_by(year_quarter, county_fips) %>%
+  mutate(controller_share_county = 100*controller_size_100employees_county/sum(controller_size_100employees_county, na.rm = TRUE)) %>%
+  summarize(hhi_county = sum(controller_share_county^2, na.rm = TRUE),
+            county_size_100employees = sum(controller_size_100employees_county, na.rm = TRUE))
 
 all_mines_panel_quarters <- operator_mines_quarters %>%
-  mutate(quarter_fraction = (as.numeric(quarter)-1.0)*0.25,
-         year_quarter = as.numeric(year) + as.numeric(quarter_fraction)) %>%
   group_by(year_quarter, county_fips) %>%
   mutate(active_mines = n()) %>%
   ungroup() %>%
-  group_by(year_quarter, county_fips, CONTROLLER_ID) %>%
-  mutate(same_controller = n(),
-         controller_size_100employees_county = sum(size_100employees, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(pct_same_controller_county = same_controller/active_mines) %>%
-  group_by(year_quarter, county_fips) %>%
-  mutate(largest_pct_controller = max(pct_same_controller_county, na.rm = TRUE),
-         size_100employees_county = sum(size_100employees, na.rm = TRUE),
-         controller_share_county = 100*controller_size_100employees_county/size_100employees_county,
-         hhi_county = sum(controller_share_county^2, na.rm = TRUE)) %>%
-  ungroup() %>%
-  group_by(year_quarter, CONTROLLER_ID) %>%
-  mutate(controller_size_100employees_natl = sum(size_100employees, na.rm = TRUE)) %>%
-  ungroup() %>%
-  group_by(year_quarter) %>%
-  mutate(size_100employees_natl = sum(size_100employees, na.rm = TRUE),
-         controller_share_natl = 100*controller_size_100employees_natl/size_100employees_natl,
-         hhi_natl = sum(controller_share_natl^2, na.rm = TRUE)) %>%
-  ungroup()
+  left_join(hhi_county_level_all_mines, by = c("year_quarter", "county_fips"))
+  
 
 all_mines_agg_production_years <- read_csv(file.path(ddir, "cleaned", "operators_years.csv"))
 all_mines_agg_production_quarters <- read_csv(file.path(ddir, "cleaned", "operators_quarters.csv"))
@@ -103,8 +105,68 @@ contractor_production_quarters <- read_csv(file.path(ddir, "cleaned", "contracto
 # Event studies
 ##----------##
 
+# Massey-Alpha merger
+massey_alpha_mines_df <- mine_panel_quarters %>%
+  dplyr::filter(controller_change == 1, year == 2011, CONTROLLER_ID == "0041211") %>%
+  dplyr::select(MINE_ID) %>%
+  distinct() %>%
+  mutate(massey_alpha = 1)
+
+mine_panel_quarters_massey <- mine_panel_quarters %>%
+  left_join(massey_alpha_mines_df, by = "MINE_ID") %>%
+  mutate(massey_alpha = ifelse(is.na(massey_alpha), 0, massey_alpha),
+         massey_alpha_group_var = ifelse(massey_alpha == 1, 2011.50, 0))
+
+drop_massey_mines <- mine_panel_quarters_massey %>%
+  dplyr::filter(zero_production_quarter == 1,
+         year >= 2013,
+         year <= 2013,
+         massey_alpha == 1) %>%
+  dplyr::select(MINE_ID) %>%
+  distinct() %>%
+  mutate(drop_massey = 1)
+
+mine_panel_quarters_massey <- mine_panel_quarters_massey %>%
+  left_join(drop_massey_mines, by = "MINE_ID") %>%
+  mutate(drop_massey = ifelse(is.na(drop_massey), 0, drop_massey)) #%>%
+  filter(drop_massey != 1)
+
+mine_panel_quarters_es <- mine_panel_quarters_massey %>%
+  filter(year >= 2009,
+         year < 2015,
+         zero_production_quarter == 0,
+         active_after2015 == 1) %>%
+  mutate(traumatic_injuries = ifelse(is.na(traumatic_injuries), 0, traumatic_injuries),
+         traumatic_injury_rate = ifelse(is.na(traumatic_injury_rate), 0, traumatic_injury_rate))
+y_var <- "traumatic_injury_rate"
+out <- att_gt(yname = y_var,
+              gname = "massey_alpha_group_var",
+              idname = "MINE_ID",
+              tname = "year_quarter",
+              xformla = ~1,
+              data = mine_panel_quarters_es,
+              est_method = "reg",
+              allow_unbalanced_panel = TRUE,
+              base_period = "universal"
+)
+es <- aggte(out, type = "dynamic", na.rm = TRUE)
+mass_alpha_plot <- ggdid(es)
+mass_alpha_plot
+
+time_series_masey_alpha <- filter(mine_panel_quarters_es, massey_alpha == 1, active_after2015 == 1) %>%
+  group_by(year_quarter) %>%
+  summarize(ss_v = sum(ss_violations, na.rm = TRUE),
+            labor_hours = sum(labor_hours, na.rm = TRUE)) %>%
+  mutate(ss_v_rate = 2000*ss_v/labor_hours)
+
+ggplot(data = time_series_masey_alpha, aes(x = year_quarter, y = ss_v_rate)) +
+  geom_line()
+
+# All controller change mines event studies 
+
 y_var <- "hhi_county"
-for (t in seq(from = 0, to = 15, by = 2)) {
+max_t <- 15
+for (t in seq(from = 0, to = max_t, by = 2)) {
   min_year <- 2000 + t
   max_year <- min_year + 5
   
@@ -124,7 +186,7 @@ for (t in seq(from = 0, to = 15, by = 2)) {
                 gname = "first_controller_change_year_quarter",
                 idname = "MINE_ID",
                 tname = "year_quarter",
-                xformla = ~1,
+                xformla = ~active_mines + 1,
                 data = mine_panel_quarters_es,
                 est_method = "reg",
                 allow_unbalanced_panel = TRUE,
@@ -146,6 +208,7 @@ plot_10
 plot_12
 plot_14
 
+# potential covariate: labor_hours + 
 # Also tried on the LHS:
 # union -
 # violation_rate - 
@@ -207,6 +270,11 @@ ggsave(file.path(outputdir, 'zero_production_quarter_es6.png'),
        plot = zero_production_quarter_es6, width = 8, height = 6)
 
 # hhi_county ~ controller_change - saved
+# plot_4
+# plot_6
+# plot_8
+# plot_10
+# plot_12
 hhi_county_quarter_es2 <- plot_2 +
   xlim(-1.1, 2.1) +
   scale_y_continuous(limits = c(-1000, 3500)) +
@@ -224,9 +292,9 @@ ggsave(file.path(outputdir, 'hhi_county_quarter_es2.png'),
 
 hhi_county_quarter_es4 <- plot_4 +
   xlim(-1.1, 2.1) +
-  scale_y_continuous(limits = c(-3500, 4000)) +
+  scale_y_continuous(limits = c(-800, 500)) +
   geom_hline(yintercept = 200, color = "gray") +
-  annotate("text", x = -0.1, y = 300, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
+  annotate("text", x = -0.1, y = 210, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
   ggtitle("Event Study of First Controller Change for Underground Bituminous Coal Mines: 2004-2009") +
   ylab("County HHI change") +
   xlab("Years (by quarters)") +
@@ -239,9 +307,9 @@ ggsave(file.path(outputdir, 'hhi_county_quarter_es4.png'),
 
 hhi_county_quarter_es6 <- plot_6 +
   xlim(-1.1, 2.1) +
-  scale_y_continuous(limits = c(-3000, 8000)) +
+  scale_y_continuous(limits = c(-400, 1000)) +
   geom_hline(yintercept = 200, color = "gray") +
-  annotate("text", x = -0.1, y = 300, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
+  annotate("text", x = -0.1, y = 210, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
   ggtitle("Event Study of First Controller Change for Underground Bituminous Coal Mines: 2006-2011") +
   ylab("County HHI change") +
   xlab("Years (by quarters)") +
@@ -253,10 +321,10 @@ ggsave(file.path(outputdir, 'hhi_county_quarter_es6.png'),
        plot = hhi_county_quarter_es6, width = 9, height = 6)
 
 hhi_county_quarter_es8 <- plot_8 +
-  xlim(-1.1, 2.1) +
-  scale_y_continuous(limits = c(-2000, 8000)) +
+  xlim(-1.6, 2.4) +
+  scale_y_continuous(limits = c(-400, 2000)) +
   geom_hline(yintercept = 200, color = "gray") +
-  annotate("text", x = -0.1, y = 300, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
+  annotate("text", x = -0.1, y = 210, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
   ggtitle("Event Study of First Controller Change for Underground Bituminous Coal Mines: 2008-2013") +
   ylab("County HHI change") +
   xlab("Years (by quarters)") +
@@ -268,10 +336,10 @@ ggsave(file.path(outputdir, 'hhi_county_quarter_es8.png'),
        plot = hhi_county_quarter_es8, width = 9, height = 6)
 
 hhi_county_quarter_es10 <- plot_10 +
-  xlim(-1.1, 2.1) +
-  scale_y_continuous(limits = c(-2000, 10000)) +
+  xlim(-1.6, 2.4) +
+  scale_y_continuous(limits = c(-600, 3000)) +
   geom_hline(yintercept = 200, color = "gray") +
-  annotate("text", x = -0.1, y = 300, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
+  annotate("text", x = -0.05, y = 230, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
   ggtitle("Event Study of First Controller Change for Underground Bituminous Coal Mines: 2010-2015") +
   ylab("County HHI change") +
   xlab("Years (by quarters)") +
@@ -281,6 +349,21 @@ hhi_county_quarter_es10 <- plot_10 +
 hhi_county_quarter_es10
 ggsave(file.path(outputdir, 'hhi_county_quarter_es10.png'),
        plot = hhi_county_quarter_es10, width = 9, height = 6)
+
+hhi_county_quarter_es12 <- plot_12 +
+  xlim(-1.1, 2.1) +
+  scale_y_continuous(limits = c(-800, 3000)) +
+  geom_hline(yintercept = 200, color = "gray") +
+  annotate("text", x = -0.05, y = 230, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
+  ggtitle("Event Study of First Controller Change for Underground Bituminous Coal Mines: 2012-2017") +
+  ylab("County HHI change") +
+  xlab("Years (by quarters)") +
+  theme(plot.title = element_text(colour = "black"),
+        axis.title.x = element_text(colour = "black"),
+        axis.title.y = element_text(colour = "black"))
+hhi_county_quarter_es12
+ggsave(file.path(outputdir, 'hhi_county_quarter_es12.png'),
+       plot = hhi_county_quarter_es12, width = 9, height = 6)
 
 # HHI event studies conditional on HHI
 y_var <- "hhi_county"
@@ -301,12 +384,13 @@ for (t in seq(from = 0, to = 15, by = 2)) {
                                                          0, first_controller_change_year_quarter)) %>%
     filter(year >= min_year,
            year <= max_year,
-           hhi_county>=2500)
+           hhi_county>=2500,
+           zero_production_quarter == 0)
   out <- att_gt(yname = y_var,
                 gname = "first_controller_change_year_quarter",
                 idname = "MINE_ID",
                 tname = "year_quarter",
-                xformla = ~1,
+                xformla = ~active_mines + 1,
                 data = mine_panel_quarters_es,
                 est_method = "reg",
                 allow_unbalanced_panel = TRUE,
@@ -406,7 +490,7 @@ for (t in seq(from = 0, to = 15, by = 2)) {
                 gname = "first_controller_change_year_quarter",
                 idname = "MINE_ID",
                 tname = "year_quarter",
-                xformla = ~1,
+                xformla = ~active_mines + 1,
                 data = mine_panel_quarters_es,
                 est_method = "reg",
                 allow_unbalanced_panel = TRUE,
@@ -475,10 +559,10 @@ ggsave(file.path(outputdir, 'hhi_county_quarter_allmines_es8.png'),
        plot = hhi_county_quarter_allmines_es8, width = 8, height = 6)
 
 hhi_county_quarter_allmines_es10 <- plot_10 +
-  xlim(-1.1, 2.1) +
-  scale_y_continuous(limits = c(-1000, 6000)) +
+  xlim(-1.9, 2.9) +
+  scale_y_continuous(limits = c(-500, 1200)) +
   geom_hline(yintercept = 200, color = "gray") +
-  annotate("text", x = -0.1, y = 300, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
+  annotate("text", x = -0.05, y = 230, label = "HHI = 200", color = "gray", hjust = 1, vjust = 0) +
   ggtitle("Event Study of First Controller Change for All Coal Mines: 2010-2015") +
   ylab("County HHI change") +
   xlab("Years (by quarters)") +
@@ -848,7 +932,8 @@ operators_contractors_employment_fig <- ggplot(operators_contractors_agg_quarter
     "Labor Hrs: Contractors" = '#014d64',
     "Num employees: Mine operators" = 'darkred',
     "Num employees: Contractors" = '#014d64')) +
-  labs(color = '') +
+  labs(color = '',
+       caption = "Source: MSHA.") +
   guides(color = guide_legend(override.aes = list(linetype = c("dashed", "dashed","solid", "solid")))) +
   theme(axis.line = element_line(color = "black"), panel.background = element_blank(),
         axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
