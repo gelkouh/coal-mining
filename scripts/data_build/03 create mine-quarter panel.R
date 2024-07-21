@@ -1,42 +1,85 @@
-# Last updated: Apr 5, 2023
+# Create mine-quarter panel dataset 
+
+# Header ------------------------------------------------------------------
+
+rm(list = ls())
 
 root <- getwd()
-while(basename(root) != "coal-mining") { # this is the name of your project directory you want to use
-  root <- dirname(root)
-}
+while(basename(root) != "coal-mining") root <- dirname(root)
+
+source(file.path(root, "scripts", "header_script.R"))
+
+# Globals and file paths --------------------------------------------------
+
 source(file.path(root, "data.R"))
 ddir <- file.path(dir, "data")
 
-library(tidyverse)
+input_eia <- file.path(ddir, "Raw Cleaned")
+output <- input_msha <- file.path(ddir, "Intermediate")
 
-eia_df <- read_csv(file.path(ddir, "cleaned", "coalpublic_1993_2021_mines.csv")) %>%
-  rename(MINE_ID = `MSHA ID`,
-         mine_name_eia = `Mine Name`,
-         year = Year,
-         status_eia = `Mine Status`,
-         type = `Mine Type`,
-         union_code = `Union Code`,
-         company_type = `Company Type`,
-         production_tons_eia = `Production (short tons)`) %>%
-  dplyr::select(MINE_ID, year, mine_name_eia, status_eia, type, union_code, union, company_type, production_tons_eia) %>%
-  mutate(MINE_ID = as.double(MINE_ID)) %>%
-  filter(!is.na(MINE_ID)) %>%
-  group_by(MINE_ID) %>%
-  arrange(MINE_ID, year) %>%
-  mutate(union_change_direction = union - lag(union),
-         union_change_year = ifelse(union_change_direction == 0, 0, 1),
-         union_change_direction = ifelse(is.na(union_change_direction), 0, union_change_direction),
-         union_change_year = ifelse(is.na(union_change_year), 0, union_change_year),
-         subsidiary_indicator = ifelse(company_type == "Operating Subsidiary", 1, 0),
-         # 2012 EIA data seems to have some errors where 6 mines that are union mines in 2011 and 2013 are marked as nonunion in 2012
-         # Internet for news articles about union status at these mines around 2012 returned no relevant results 
-         union = ifelse((MINE_ID == 100851 & year == 2012) | 
-                          (MINE_ID == 4200121 & year == 2012) | 
-                          (MINE_ID == 4601537 & year == 2012) | 
-                          (MINE_ID == 4601816 & year == 2012) | 
-                          (MINE_ID == 4606618 & year == 2012) | 
-                          (MINE_ID == 4609152 & year == 2012), 
-                        1, union))
+# Combine MSHA and EIA union status data ----------------------------------
+
+msha_panel <- readRDS(file.path(input_msha, "02a msha mine-quarter panel.rds")) %T>%
+  dplyr::glimpse()
+
+eia_panel <- readr::read_csv(file.path(input_eia, "01a eia annual mine union status, 1993-2022.csv")) %T>%
+                               dplyr::glimpse()
+
+eia_panel_cleaned <- eia_panel %>%
+  dplyr::rename(MINE_ID = msha_id) %>%
+  dplyr::mutate(MINE_ID = as.double(MINE_ID)) %>%
+  dplyr::filter(!is.na(MINE_ID),
+                mine_type_eia == "Underground") %>%
+  dplyr::group_by(MINE_ID) %>%
+  dplyr::arrange(MINE_ID, year) %>%
+  dplyr::mutate(union_change_direction = union - lag(union),
+                union_change_year = ifelse(union_change_direction == 0, 0, 1),
+                union_change_direction = ifelse(is.na(union_change_direction), 0, union_change_direction),
+                union_change_year = ifelse(is.na(union_change_year), 0, union_change_year),
+                subsidiary_indicator = ifelse(company_type_eia == "Operating Subsidiary", 1, 0),
+                # 2012 EIA data seems to have some errors where 6 mines that are union mines in 2011 and 2013 are marked as nonunion in 2012
+                # Internet for news articles about union status at these mines around 2012 returned no relevant results 
+                union = ifelse((MINE_ID == 100851 & year == 2012) | 
+                                 (MINE_ID == 4200121 & year == 2012) | 
+                                 (MINE_ID == 4601537 & year == 2012) | 
+                                 (MINE_ID == 4601816 & year == 2012) | 
+                                 (MINE_ID == 4606618 & year == 2012) | 
+                                 (MINE_ID == 4609152 & year == 2012), 
+                               1, union),
+                company_type_eia = ifelse("Indepedent Producer Operator", "Independent Producer Operator", company_type_eia)) %>%
+  dplyr::ungroup() %T>%
+  dplyr::glimpse()
+
+eia_underground_mines <- eia_panel_cleaned %>%
+  dplyr::filter(year >= 2000,
+                year <= 2023) %>%
+  dplyr::select(MINE_ID) %>%
+  dplyr::distinct() %T>%
+  dplyr::glimpse()
+
+mine_panel <- msha_panel %>%
+  dplyr::inner_join(eia_underground_mines,
+                    by = "MINE_ID") %>%
+  dplyr::inner_join(eia_panel_cleaned,
+                   by = c("MINE_ID", "year")) %T>%
+  dplyr::glimpse()
+
+
+
+
+
+
+haven::write_dta(msha_mine_quarter_panel, file.path(output, "03.dta"))
+saveRDS(msha_mine_quarter_panel, file.path(output, "03.rds"))
+
+
+
+
+
+
+
+
+
 
 msha_panel_years <- read_csv(file.path(ddir, "cleaned", "msha_panel_years.csv"))
 msha_panel_quarters <- read_csv(file.path(ddir, "cleaned", "msha_panel_quarters.csv"))
@@ -139,4 +182,27 @@ if (nrow(mine_panel_years) == nrow(mine_panel_years %>% dplyr::select(MINE_ID, y
 } else {
   print('WARNING: DUPLICATE OBSERVATIONS')
 }
+
+
+time_trend_df <- msha_mine_quarter_panel %>%
+  filter(year >= 2000,
+         year <= 2023,
+         zero_production_quarter == 0) %>%
+  mutate(violations_nonminer_act = violations - violations_miner_act,
+         ss_violations_nonminer_act = ss_violations - ss_violations_miner_act) %>%
+  group_by(year_quarter) %>%
+  summarize(total_injury_rate = 2000*(sum(total_injuries, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
+            traumatic_injury_rate = 2000*(sum(traumatic_injuries, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
+            violation_rate = 2000*(sum(violations, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
+            ss_violation_rate = 2000*(sum(ss_violations, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
+            labor_hours = sum(labor_hours, na.rm = TRUE),
+            total_avg_employee_count = sum(avg_employee_count, na.rm = TRUE),
+            coal_production_tons = sum(coal_production_tons, na.rm = TRUE),
+            productivity = 2000*(coal_production_tons/labor_hours),
+            operator_changes = sum(operator_change, na.rm = TRUE),
+            controller_changes = sum(controller_change, na.rm = TRUE),
+            active_mines = n())
+
+
+
 

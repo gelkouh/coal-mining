@@ -41,11 +41,13 @@ accidents_1 <- accidents_1_raw  %>%
                                      fatality == 1,
                                    1, 0),
          nontraumatic_injury = ifelse(traumatic_injury == 0, 1, 0),
-         injury = 1) %>%
+         injury = 1,
+         lost_workday_injury = DAYS_LOST > 0) %>%
   summarize(fatalities = sum(fatality, na.rm = TRUE),
             traumatic_injuries = sum(traumatic_injury, na.rm = TRUE),
             nontraumatic_injuries = sum(nontraumatic_injury, na.rm = TRUE),
             total_injuries = sum(injury, na.rm = TRUE),
+            lost_workday_injuries = sum(lost_workday_injury, na.rm = TRUE),
             .by = c(MINE_ID, year, quarter)) %>%
   arrange(MINE_ID, year, quarter) %T>%
   dplyr::glimpse()
@@ -73,7 +75,7 @@ controller_id_types <- controllers_operators_8_raw %>%
                                           CONTROLLER_TYPES)) %T>%
   dplyr::glimpse()
 
-controllers_operators_8_long <- controlleroperatorhistory_8 %>%
+controller_history_long <- controllers_operators_8_raw %>%
   dplyr::filter(COAL_METAL_IND == "C") %>%
   dplyr::mutate(start_date = mdy(CONTROLLER_START_DT),
                 start_year = year(start_date), 
@@ -86,77 +88,90 @@ controllers_operators_8_long <- controlleroperatorhistory_8 %>%
   dplyr::ungroup() %>%
   dplyr::select(MINE_ID, CONTROLLER_ID, start_year_quarter)
 
-controller_history_panel_quarters <- expand.grid(start_year_quarter = seq(from = min(controller_history_long$start_year_quarter), to = 2022.00, by = 0.25),
+controller_history_panel_quarters <- expand.grid(start_year_quarter = seq(from = min(controller_history_long$start_year_quarter), to = 2024.00, by = 0.25),
                                                  MINE_ID = unique(controller_history_long$MINE_ID),
                                                  stringsAsFactors = FALSE) %>%
-  left_join(controllers_operators_8_long) %>% 
-  group_by(MINE_ID) %>% 
-  fill(c("CONTROLLER_ID")) %>%
-  filter(!is.na(CONTROLLER_ID)) %>%
+  dplyr::left_join(controller_history_long,
+                   by = c("MINE_ID", "start_year_quarter")) %>% 
+  dplyr::group_by(MINE_ID) %>% 
+  tidyr::fill(c("CONTROLLER_ID")) %>%
+  dplyr::filter(!is.na(CONTROLLER_ID)) %>%
   as.data.frame() %>%
-  mutate(controller_change = ifelse(MINE_ID == lag(MINE_ID) & CONTROLLER_ID != lag(CONTROLLER_ID),
-                                    1, 0),
-         start_year = floor(start_year_quarter)) %>%
-  filter(start_year >= 2000) %>%
-  ungroup() %>%
-  left_join(controller_id_names, by = "CONTROLLER_ID") %>%
-  left_join(controller_id_types, by = "CONTROLLER_ID")
+  dplyr::mutate(controller_change = ifelse(MINE_ID == lag(MINE_ID) & CONTROLLER_ID != lag(CONTROLLER_ID),
+                                           1, 0),
+                start_year = floor(start_year_quarter)) %>%
+  dplyr::filter(start_year >= 2000) %>%
+  dplyr::ungroup() %>%
+  dplyr::left_join(controller_id_names, 
+                   by = "CONTROLLER_ID") %>%
+  dplyr::left_join(controller_id_types, 
+                   by = "CONTROLLER_ID") %T>%
+  dplyr::glimpse()
 
 # Operators
 # Age of mine defined as years since the first operator began work at the mine (top censored at 1970)
-operator_mine_age <- controlleroperatorhistory_8 %>%
+operator_mine_age <- controllers_operators_8_raw %>%
   dplyr::filter(COAL_METAL_IND == "C") %>%
-  mutate(start_date = mdy(OPERATOR_START_DT),
-         start_year = year(start_date)) %>%
-  group_by(MINE_ID) %>%
-  summarize(first_year = min(start_year, na.rm = TRUE)) %>%
-  mutate(first_year = ifelse(first_year < 1970, 1970, first_year))
+  dplyr::mutate(start_date = mdy(OPERATOR_START_DT),
+                start_year = year(start_date)) %>%
+  dplyr::summarize(first_year = min(start_year, na.rm = TRUE),
+                   .by = c(MINE_ID)) %>%
+  dplyr::mutate(first_year = ifelse(first_year < 1970, 1970, first_year)) %T>%
+  dplyr::glimpse()
 
-operator_id_names <- controlleroperatorhistory_8 %>%
+operator_id_names <- controllers_operators_8_raw %>%
   dplyr::select(OPERATOR_ID, OPERATOR_NAME) %>%
-  unique() %>%
-  group_by(OPERATOR_ID) %>%
-  summarize(OPERATOR_NAMES = paste0(OPERATOR_NAME, collapse = "; "))
+  dplyr::distinct() %>%
+  dplyr::summarize(OPERATOR_NAMES = paste0(OPERATOR_NAME, collapse = "; "),
+                   .by = c(OPERATOR_ID)) %T>%
+  dplyr::glimpse()
 
-operator_history_long <- controlleroperatorhistory_8 %>%
+operator_history_long <- controllers_operators_8_raw %>%
   dplyr::filter(COAL_METAL_IND == "C") %>%
-  mutate(start_date = mdy(OPERATOR_START_DT),
-         start_year = year(start_date), 
-         start_quarter = quarter(start_date),
-         start_quarter_fraction = (as.numeric(start_quarter)-1.0)*0.25,
-         start_year_quarter = as.numeric(start_year) + as.numeric(start_quarter_fraction)) %>%
-  arrange(MINE_ID, start_date) %>%
-  group_by(MINE_ID, start_year_quarter) %>%
-  slice_tail() %>%
-  ungroup() %>%
-  dplyr::select(MINE_ID, OPERATOR_ID, start_year_quarter)
+  dplyr::mutate(start_date = mdy(OPERATOR_START_DT),
+                start_year = year(start_date), 
+                start_quarter = quarter(start_date),
+                start_quarter_fraction = (as.numeric(start_quarter)-1.0)*0.25,
+                start_year_quarter = as.numeric(start_year) + as.numeric(start_quarter_fraction)) %>%
+  dplyr::arrange(MINE_ID, start_date) %>%
+  dplyr::group_by(MINE_ID, start_year_quarter) %>%
+  dplyr::slice_tail() %>%
+  dplyr::ungroup() %>%
+  dplyr::select(MINE_ID, OPERATOR_ID, start_year_quarter) %T>%
+  dplyr::glimpse()
 
-operator_history_panel_quarters <- expand.grid(start_year_quarter = seq(from = min(operator_history_long$start_year_quarter), to = 2022.00, by = 0.25),
+operator_history_panel_quarters <- expand.grid(start_year_quarter = seq(from = min(operator_history_long$start_year_quarter), to = 2024.00, by = 0.25),
                                                MINE_ID = unique(operator_history_long$MINE_ID),
                                                stringsAsFactors = FALSE) %>%
-  left_join(operator_history_long) %>% 
-  group_by(MINE_ID) %>% 
-  fill(c("OPERATOR_ID")) %>%
-  filter(!is.na(OPERATOR_ID)) %>%
+  dplyr::left_join(operator_history_long,
+                   by = c("MINE_ID", "start_year_quarter")) %>% 
+  dplyr::group_by(MINE_ID) %>% 
+  tidyr::fill(c("OPERATOR_ID")) %>%
+  dplyr::filter(!is.na(OPERATOR_ID)) %>%
   as.data.frame() %>%
-  mutate(operator_change = ifelse(MINE_ID == lag(MINE_ID) & OPERATOR_ID != lag(OPERATOR_ID),
-                                  1, 0),
-         start_year = floor(start_year_quarter)) %>%
-  filter(start_year >= 2000) %>%
-  ungroup() %>%
-  left_join(operator_id_names, by = "OPERATOR_ID")
+  dplyr::mutate(operator_change = ifelse(MINE_ID == lag(MINE_ID) & OPERATOR_ID != lag(OPERATOR_ID),
+                                         1, 0),
+                start_year = floor(start_year_quarter)) %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(start_year >= 2000) %>%
+  dplyr::left_join(operator_id_names, 
+                   by = "OPERATOR_ID") %T>%
+  dplyr::glimpse()
 
-controller_operator_panel_quarters <- controller_history_panel_quarters %>%
-  full_join(operator_history_panel_quarters, by = c("MINE_ID", "start_year_quarter", "start_year")) %>%
-  mutate(start_quarter = start_year_quarter - start_year,
-         year = start_year, 
-         quarter = ifelse(start_quarter == 0, 1,
-                          ifelse(start_quarter == 0.25, 2,
-                                 ifelse(start_quarter == 0.5, 3,
-                                        4)))) %>%
+controllers_operators_8 <- controller_history_panel_quarters %>%
+  dplyr::full_join(operator_history_panel_quarters,
+                   by = c("MINE_ID", "start_year_quarter", "start_year")) %>%
+  dplyr::mutate(start_quarter = start_year_quarter - start_year,
+                year = start_year, 
+                quarter = ifelse(start_quarter == 0, 1,
+                                 ifelse(start_quarter == 0.25, 2,
+                                        ifelse(start_quarter == 0.5, 3,
+                                               4)))) %>%
   dplyr::select(-start_year_quarter, -start_year, -start_quarter) %>%
-  left_join(operator_mine_age, by = "MINE_ID") %>%
-  mutate(mine_age = year - first_year)
+  dplyr::left_join(operator_mine_age, 
+                   by = "MINE_ID") %>%
+  dplyr::mutate(mine_age = year - first_year) %T>%
+  dplyr::glimpse()
 
 # 10 employment production data set (quarterly) ---------------------------
 
@@ -164,7 +179,7 @@ minesprodquarterly_10_raw <- readRDS(file.path(input, "01b msha 10 employment pr
   dplyr::glimpse()
 
 minesprodquarterly_10_subunits <- minesprodquarterly_10_raw %>%
-  rename(year = CAL_YR,
+  dplyr::rename(year = CAL_YR,
          quarter = CAL_QTR) %>%
   dplyr::select(year, quarter, MINE_ID, SUBUNIT_CD) %>%
   dplyr::distinct() %>%
@@ -214,80 +229,85 @@ violations_17 <- violations_17_int %>%
                    .by = c(MINE_ID, year, quarter)) %T>%
   dplyr::glimpse()
 
+# 13 mines data set -------------------------------------------------------
 
+mines_13_raw <- readRDS(file.path(input, "01b msha 13 mines data set.rds")) %T>%
+  dplyr::glimpse()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-mines_cleaned <- mines_13 %>%
-  filter(PRIMARY_CANVASS_CD == '2') %>%
-  rename(district = DISTRICT,
-         msha_office_code = OFFICE_CD,
-         inspector_office_dist_miles = MILES_FROM_OFFICE,
-         avg_mine_height_in = AVG_MINE_HEIGHT,
-         longitude = LONGITUDE,
-         latitude = LATITUDE,
-         state = STATE,
-         county_fips = FIPS_CNTY_CD,
-         county = FIPS_CNTY_NM) %>%
-  mutate(bituminous = 1,
-         pillar_recovery_used = ifelse(PILLAR_RECOVERY_USED == "Y", 1, 0),
-         part_48_training_restriction = ifelse(PART48_TRAINING == "Y", 1, 0)) %>%
+mines_13 <- mines_13_raw %>%
+  dplyr::filter(PRIMARY_CANVASS_CD == "2") %>%
+  dplyr::rename(district = DISTRICT,
+                msha_office_code = OFFICE_CD,
+                inspector_office_dist_miles = MILES_FROM_OFFICE,
+                avg_mine_height_in = AVG_MINE_HEIGHT,
+                longitude = LONGITUDE,
+                latitude = LATITUDE,
+                state = STATE,
+                county_fips = FIPS_CNTY_CD,
+                county = FIPS_CNTY_NM) %>%
+  dplyr::mutate(bituminous = 1,
+                pillar_recovery_used = ifelse(PILLAR_RECOVERY_USED == "Y", 1, 0),
+                part_48_training_restriction = ifelse(PART48_TRAINING == "Y", 1, 0)) %>%
   dplyr::select(MINE_ID, bituminous, inspector_office_dist_miles, 
                 avg_mine_height_in, longitude, latitude, pillar_recovery_used, 
                 part_48_training_restriction, msha_office_code, district,
-                county, county_fips, state)
+                county, county_fips, state) %T>%
+  dplyr::glimpse()
 
-mines_all <- mines_13 %>%
-  rename(longitude = LONGITUDE,
-         latitude = LATITUDE,
-         state = STATE,
-         county_fips = FIPS_CNTY_CD,
-         county = FIPS_CNTY_NM) %>%
-  dplyr::select(MINE_ID, longitude, latitude, county, county_fips, state)
+
+# 19 assessed violations --------------------------------------------------
+
+assessed_violations_19_raw <- readRDS(file.path(input, "01b msha 19 assessed violations.rds")) %T>%
+  dplyr::glimpse()
+
+# Thousands of penalty points in the previous calendar year
+assessed_violations_19 <- assessed_violations_19_raw %>%
+  dplyr::mutate(occurrence_date = lubridate::mdy(OCCURRENCE_DT),
+                year = lubridate::year(occurrence_date),
+                quarter = lubridate::quarter(occurrence_date)) %>%
+  dplyr::summarize(penalty_points = sum(PENALTY_POINTS, na.rm = TRUE),
+                   .by = c("MINE_ID", "year", "quarter")) %>%
+  dplyr::mutate(penalty_points = penalty_points / 1000) %T>%
+  dplyr::glimpse()
 
 # Create mine-quarter panel -----------------------------------------------
 
-msha_mine_quarter_panel <- accidents_1 %>%
-  dplyr::full_join(minesprodquarterly_10,
+# The sample used includes all underground bituminous mine-quarters from 1993 to 2010 with positive coal production and positive hours worked.
+msha_mine_quarter_panel_unfiltered <- mines_13 %>%
+  dplyr::inner_join(controllers_operators_8,
+                    by = "MINE_ID") %>%
+  dplyr::filter(year >= 2000,
+                year <= 2023) %>%
+  dplyr::left_join(accidents_1,
                    by = c("MINE_ID", "year", "quarter")) %>%
-  dplyr::full_join(violations_17,
-                   by = c("MINE_ID", "year", "quarter")) %T>%
+  dplyr::left_join(violations_17,
+                   by = c("MINE_ID", "year", "quarter")) %>%
+  dplyr::left_join(assessed_violations_19,
+                   by = c("MINE_ID", "year", "quarter")) %>%
+  dplyr::left_join(minesprodquarterly_10,
+                   by = c("MINE_ID", "year", "quarter")) %>%
+  dplyr::mutate(pos_production_quarter = (coal_production_tons > 0 & labor_hours > 0)) %T>%
   dplyr::glimpse()
 
-write_csv(msha_mine_quarter_panel, file.path(output, "02a msha mine-quarter panel.csv"))
+positive_production_mines <- msha_mine_quarter_panel_unfiltered %>%
+  dplyr::summarize(pos_production_quarters = sum(pos_production_quarter, na.rm = TRUE),
+                   .by = "MINE_ID") %>%
+  dplyr::filter(pos_production_quarters >= 1) %>%
+  dplyr::select(MINE_ID) %T>%
+  dplyr::glimpse()
 
+msha_mine_quarter_panel <- msha_mine_quarter_panel_unfiltered %>%
+  dplyr::inner_join(positive_production_mines,
+                    by = "MINE_ID") %>%
+  dplyr::mutate(zero_production_quarter = !pos_production_quarter | is.na(pos_production_quarter),
+                fatalities = NA_to_0(fatalities),
+                traumatic_injuries = NA_to_0(traumatic_injuries),
+                total_injuries = NA_to_0(total_injuries),
+                violations = NA_to_0(violations),
+                ss_violations = NA_to_0(ss_violations),
+                lost_workday_injuries = NA_to_0(lost_workday_injuries),
+                penalty_points = NA_to_0(penalty_points)) %>%
+  dplyr::select(-pos_production_quarter) %T>%
+  dplyr::glimpse()
 
-time_trend_df <- msha_mine_quarter_panel %>%
-  filter(year >= 2000,
-         year <= 2021,
-         zero_production_quarter == 0) %>%
-  mutate(violations_nonminer_act = violations - violations_miner_act,
-         ss_violations_nonminer_act = ss_violations - ss_violations_miner_act) %>%
-  group_by(year_quarter) %>%
-  summarize(total_injury_rate = 2000*(sum(total_injuries, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            traumatic_injury_rate = 2000*(sum(traumatic_injuries, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            violation_rate = 2000*(sum(violations, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            ss_violation_rate = 2000*(sum(ss_violations, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            violation_miner_act_rate = 2000*(sum(violations_miner_act, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            ss_violation_miner_act_rate = 2000*(sum(ss_violations_miner_act, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            violation_nonminer_act_rate = 2000*(sum(violations_nonminer_act, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            ss_violation_nonminer_act_rate = 2000*(sum(ss_violations_nonminer_act, na.rm = TRUE)/sum(labor_hours, na.rm = TRUE)),
-            labor_hours = sum(labor_hours, na.rm = TRUE),
-            total_avg_employee_count = sum(avg_employee_count, na.rm = TRUE),
-            coal_production_tons = sum(coal_production_tons, na.rm = TRUE),
-            productivity = 2000*(coal_production_tons/labor_hours),
-            operator_changes = sum(operator_change, na.rm = TRUE),
-            controller_changes = sum(controller_change, na.rm = TRUE),
-            active_mines = n())
+saveRDS(msha_mine_quarter_panel, file.path(output, "02a msha mine-quarter panel.rds"))
