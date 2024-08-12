@@ -1,0 +1,41 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{7}{c}}
+\hline\hline
+                         &\multicolumn{7}{c}{Dependent Variable: Total Injury Count}                                                                                               \\
+                         &\multicolumn{1}{c}{\shortstack{(1)\\2000-2004}}&\multicolumn{1}{c}{\shortstack{(2)\\2005-2009}}&\multicolumn{1}{c}{\shortstack{(3)\\2010-2015}}&\multicolumn{1}{c}{\shortstack{(4)\\2016-2022}}&\multicolumn{1}{c}{\shortstack{(5)\\2000-2010}}&\multicolumn{1}{c}{\shortstack{(6)\\2011-2022}}&\multicolumn{1}{c}{\shortstack{(7)\\2000-2022}}\\
+\hline
+                         &                     &                     &                     &                     &                     &                     &                     \\
+Union=1                  &       0.601\sym{*}  &       0.791         &       1.423\sym{*}  &       2.057\sym{***}&       0.607\sym{*}  &       1.571\sym{***}&       0.870         \\
+                         &     (0.173)         &     (0.316)         &     (0.294)         &     (0.522)         &     (0.179)         &     (0.214)         &     (0.184)         \\
+[1em]
+Mine Size                &       0.845\sym{***}&       1.052         &       1.013         &       1.000         &       0.948         &       1.006         &       0.960         \\
+                         &     (0.054)         &     (0.084)         &     (0.028)         &     (0.041)         &     (0.051)         &     (0.034)         &     (0.036)         \\
+[1em]
+Union=1 $\times$ Mine Size&       1.025         &       0.955         &       0.960         &       1.035         &       1.039         &       0.993         &       1.028         \\
+                         &     (0.086)         &     (0.088)         &     (0.028)         &     (0.049)         &     (0.069)         &     (0.031)         &     (0.039)         \\
+[1em]
+ln(Controller Size)      &       0.834\sym{**} &       0.678\sym{***}&       0.850\sym{***}&       1.017         &       0.747\sym{***}&       0.889\sym{**} &       0.805\sym{***}\\
+                         &     (0.064)         &     (0.057)         &     (0.053)         &     (0.085)         &     (0.049)         &     (0.048)         &     (0.049)         \\
+[1em]
+Mine Age                 &       0.970\sym{***}&       0.995         &       0.982\sym{***}&       0.998         &       0.987\sym{**} &       0.990\sym{*}  &       0.986\sym{***}\\
+                         &     (0.007)         &     (0.005)         &     (0.006)         &     (0.009)         &     (0.006)         &     (0.005)         &     (0.004)         \\
+[1em]
+Productivity             &       1.000         &       1.000         &       1.000\sym{***}&       1.000         &       1.000         &       1.000\sym{**} &       1.000         \\
+                         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         \\
+[1em]
+Penalty Pts Last 4 Qtrs  &       1.011         &       1.002         &       1.000         &       1.002         &       1.004         &       1.002         &       1.008\sym{**} \\
+                         &     (0.013)         &     (0.004)         &     (0.003)         &     (0.003)         &     (0.004)         &     (0.002)         &     (0.003)         \\
+[1em]
+Mine Subunit dummies     &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+[1em]
+MSHA Mine District dummies&         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+[1em]
+Year-Quarter dummies     &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+\hline
+Observations             &         503         &         553         &         676         &         772         &        1170         &        1334         &        2504         \\
+\hline\hline
+\multicolumn{8}{l}{\footnotesize Exponentiated coefficients; Standard errors in parentheses}\\
+\multicolumn{8}{l}{\footnotesize \sym{*} \(p<0.10\), \sym{**} \(p<0.05\), \sym{***} \(p<0.01\)}\\
+\end{tabular}
+}

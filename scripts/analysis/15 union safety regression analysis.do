@@ -11,7 +11,7 @@ graph set ps fontface "Times New Roman"
 
 gl data_path "C:\Users\celkouh\Downloads\data"
 gl input "${data_path}\Output"
-gl output ""
+gl output_table "..\..\output\tables\irr_tables_union_premium"
 
 use "${input}\03 mine-quarter panel, union safety analysis.dta", clear
 
@@ -22,7 +22,16 @@ foreach var_to_enc in district year_quarter {
 	rename `var_to_enc'_enc `var_to_enc'
 } 
 
-*LaTeX output: regsave or outreg2
+lab var union "Union"
+lab var size_100FTEs "Mine Size"
+lab var ln_controller_size_100FTEs "ln(Controller Size)"
+lab var mine_age "Mine Age"
+lab var productivity "Productivity"
+lab var penalty_points_prev4qtrs "Penalty Pts Last 4 Qtrs"
+lab var total_injuries "Dependent Variable: Total Injury Count"
+lab var traumatic_injuries "Dependent Variable: Traumatic Injury Count"
+lab var violations "Dependent Variable: Total MSHA Violation Count" 
+lab var ss_violations "Dependent Variable: Significant and Substantial MSHA Violation Count"
 
 drop MINE_ID_active_100pct
 gen byte MINE_ID_active_anypct = 1
@@ -31,29 +40,25 @@ foreach persistence_level of varlist MINE_ID_active_*pct {
 	
 	foreach reg_var_lhs in total_injuries traumatic_injuries violations ss_violations {
 		di in red "`reg_var_lhs'"
-		di in red "Period 1a"
-		qui nbreg `reg_var_lhs' i.union##c.size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs i.year_quarter i.district i.subunit_1 i.subunit_2 i.subunit_3 i.subunit_4 i.subunit_5 i.subunit_6 i.subunit_12 i.subunit_17 i.subunit_30 i.subunit_99 if inrange(year, 2000, 2004) & !productivity_top1pct & `persistence_level', irr exp(labor_hours) vce(cluster MINE_ID)
-		if ("`reg_var_lhs'" == "total_injuries" & "`persistence_level'" == "MINE_ID_active_70pct") regsave using "${input}/_temp/15 union safety regression output.dta", replace addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "2000_2004") pval ci rtable
-		if ("`reg_var_lhs'" != "total_injuries" | "`persistence_level'" != "MINE_ID_active_70pct") regsave using "${input}/_temp/15 union safety regression output.dta", append addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "2000_2004") pval ci rtable
-
-		di in red "Period 2a"
-		qui nbreg `reg_var_lhs' i.union##c.size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs i.year_quarter i.district i.subunit_1 i.subunit_2 i.subunit_3 i.subunit_4 i.subunit_5 i.subunit_6 i.subunit_12 i.subunit_17 i.subunit_30 i.subunit_99 if inrange(year, 2005, 2009) & !productivity_top1pct & `persistence_level', irr exp(labor_hours) vce(cluster MINE_ID)
-		regsave using "${input}/_temp/15 union safety regression output.dta", append addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "2005_2009") pval ci rtable
-
-		di in red "Period 3a"
-		qui nbreg `reg_var_lhs' i.union##c.size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs i.year_quarter i.district i.subunit_1 i.subunit_2 i.subunit_3 i.subunit_4 i.subunit_5 i.subunit_6 i.subunit_12 i.subunit_17 i.subunit_30 i.subunit_99 if inrange(year, 2010, 2015) & !productivity_top1pct & `persistence_level', irr exp(labor_hours) vce(cluster MINE_ID)
-		regsave using "${input}/_temp/15 union safety regression output.dta", append addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "2010_2015") pval ci rtable
-
-		di in red "Period 4a"
-		qui nbreg `reg_var_lhs' i.union##c.size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs i.year_quarter i.district i.subunit_1 i.subunit_2 i.subunit_3 i.subunit_4 i.subunit_5 i.subunit_6 i.subunit_12 i.subunit_17 i.subunit_30 i.subunit_99 if inrange(year, 2016, 2022) & !productivity_top1pct & `persistence_level', irr exp(labor_hours) vce(cluster MINE_ID)
-		regsave using "${input}/_temp/15 union safety regression output.dta", append addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "2016_2022") pval ci rtable
 		
-		di in red "Period 1b"
-		qui nbreg `reg_var_lhs' i.union##c.size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs i.year_quarter i.district i.subunit_1 i.subunit_2 i.subunit_3 i.subunit_4 i.subunit_5 i.subunit_6 i.subunit_12 i.subunit_17 i.subunit_30 i.subunit_99 if inrange(year, 2000, 2010) & !productivity_top1pct & `persistence_level', irr exp(labor_hours) vce(cluster MINE_ID)
-		regsave using "${input}/_temp/15 union safety regression output.dta", append addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "2000_2010") pval ci rtable
-
-		di in red "Period 2b"
-		qui nbreg `reg_var_lhs' i.union##c.size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs i.year_quarter i.district i.subunit_1 i.subunit_2 i.subunit_3 i.subunit_4 i.subunit_5 i.subunit_6 i.subunit_12 i.subunit_17 i.subunit_30 i.subunit_99 if inrange(year, 2011, 2022) & !productivity_top1pct & `persistence_level', irr exp(labor_hours) vce(cluster MINE_ID)
-		regsave using "${input}/_temp/15 union safety regression output.dta", append addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "2011_2022") pval ci rtable
+		foreach time_period in 2000_2004 2005_2009 2010_2015 2016_2022 2000_2010 2011_2022 2000_2022 {
+			di in red "`time_period'"
+			
+			local min_year = real(substr("`time_period'", 1, 4))
+			local max_year = real(substr("`time_period'", 6, 4))
+			
+			eststo: qui nbreg `reg_var_lhs' i.union##c.size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs i.year_quarter i.district i.subunit_1 i.subunit_2 i.subunit_3 i.subunit_4 i.subunit_5 i.subunit_6 i.subunit_12 i.subunit_17 i.subunit_30 i.subunit_99 if inrange(year, `min_year', `max_year') & !productivity_top1pct & `persistence_level', irr exp(labor_hours) vce(cluster MINE_ID)
+			
+			if ("`reg_var_lhs'" == "total_injuries" & "`persistence_level'" == "MINE_ID_active_70pct" & "`time_period'" == "2000_2004") regsave using "${input}/_temp/15 union safety regression output.dta", replace addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "`time_period'") pval ci rtable
+			if ("`reg_var_lhs'" != "total_injuries" | "`persistence_level'" != "MINE_ID_active_70pct" | "`time_period'" != "2000_2004") regsave using "${input}/_temp/15 union safety regression output.dta", append addlabel(model,"`reg_var_lhs', `persistence_level'", lhs_var, "`reg_var_lhs'", persistence_level, "`persistence_level'", year_range, "`time_period'") pval ci rtable
+		}
+		
+		local lhs_lab : variable label `reg_var_lhs'
+		
+		esttab using "${output_table}\irr_table_`persistence_level'_`reg_var_lhs'.tex", nonumbers label se(%10.3f) star(* 0.10 ** 0.05 *** 0.01) replace ///
+		mtitles("\shortstack{(1)\\2000-2004}" "\shortstack{(2)\\2005-2009}" "\shortstack{(3)\\2010-2015}" "\shortstack{(4)\\2016-2022}" "\shortstack{(5)\\2000-2010}" "\shortstack{(6)\\2011-2022}" "\shortstack{(7)\\2000-2022}") ///
+		keep(1.union 1.union#c.size_100FTEs size_100FTEs ln_controller_size_100FTEs mine_age productivity penalty_points_prev4qtrs) indicate("Mine Subunit dummies=*.subunit_*" "MSHA Mine District dummies=*.district" "Year-Quarter dummies=*.year_quarter") ///
+		varwidth(25) interaction(" $\times$ ")style(tex) eform eqlabel("") mgroups("`lhs_lab'", prefix(\multicolumn{@span}{c}{) suffix(}) span)
+		eststo clear
 	}
 }
