@@ -1,0 +1,19 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{8}{c}}
+\hline\hline
+                         &\multicolumn{4}{c}{S\&S Violation Rate}                                                &\multicolumn{4}{c}{Traumatic Injury Injury Rate}                                       \\
+                         &\multicolumn{1}{c}{\shortstack{(1)\\OLS}}&\multicolumn{1}{c}{\shortstack{(2)\\OLS}}&\multicolumn{1}{c}{\shortstack{(3)\\2SLS,\\MSHA Office}}&\multicolumn{1}{c}{\shortstack{(4)\\2SLS,\\Coal Seam}}&\multicolumn{1}{c}{\shortstack{(5)\\OLS}}&\multicolumn{1}{c}{\shortstack{(6)\\OLS}}&\multicolumn{1}{c}{\shortstack{(7)\\2SLS,\\MSHA Office}}&\multicolumn{1}{c}{\shortstack{(8)\\2SLS,\\Coal Seam}}\\
+\hline
+ln(Active Quarters 2000-2022)&      -0.411\sym{***}&      -0.324\sym{***}&      -0.191\sym{***}&      -1.502\sym{***}&    -0.00302         &    -0.00415         &    -0.00523\sym{**} &     0.00271         \\
+                         &     (0.063)         &     (0.063)         &     (0.031)         &     (0.222)         &     (0.003)         &     (0.003)         &     (0.002)         &     (0.006)         \\
+[1em]
+MSHA Office FE           &          No         &         Yes         &         Yes         &          No         &          No         &          No         &         Yes         &          No         \\
+\hline
+First stage F-stat.      &                     &                     &       123.7         &       109.3         &                     &                     &       123.7         &       109.3         \\
+N                        &        1650         &        1650         &        1649         &        1204         &        1650         &        1650         &        1649         &        1204         \\
+\hline\hline
+\multicolumn{9}{l}{\footnotesize Heteroskedasticity-robust standard errors are in parentheses.}\\
+\multicolumn{9}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}

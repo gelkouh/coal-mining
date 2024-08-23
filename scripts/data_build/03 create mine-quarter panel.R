@@ -19,7 +19,46 @@ ddir <- file.path(dir, "data")
 
 input_eia <- file.path(ddir, "Raw Cleaned")
 input_msha <- file.path(ddir, "Intermediate")
+input_capiq <- file.path(ddir, "Capital IQ")
 output <- file.path(ddir, "Output")
+
+
+# Capital IQ coal seam height data ----------------------------------------
+
+capiq_coalseam_raw <- readxl::read_excel(file.path(input_capiq, "SPGlobal_Export_7-30-2024_6704c458-c6c6-4499-b2ea-65c92f11cd62.xls"),
+                                         skip = 3, 
+                                         col_types = "text", 
+                                         na = "NA") %T>%
+  dplyr::glimpse()
+
+for (i in 4:ncol(capiq_coalseam_raw)) {
+  raw_yq <- capiq_coalseam_raw[1, i][[1]]
+  quarter <- switch(stringr::str_sub(raw_yq, 1, 2),
+                    "03" = 1,
+                    "06" = 2,
+                    "09" = 3,
+                    "12" = 4)
+  
+  year_short <- stringr::str_sub(raw_yq, 4, 5)
+  if (stringr::str_sub(year_short, 1, 1) == "9") year <- as.numeric(paste0("19", year_short))
+  if (stringr::str_sub(year_short, 1, 1) != "9") year <- as.numeric(paste0("20", year_short))
+  
+  year_quarter <- paste0("y", year, "q", quarter)
+  
+  colnames(capiq_coalseam_raw)[i] <- as.character(year_quarter)
+}
+
+capiq_coalseam_long <- capiq_coalseam_raw %>%
+  dplyr::filter(!is.na(MSHA_MINE_ID)) %>%
+  dplyr::select(-NAME, -MINE_UNIQUE_IDENTIFIER) %>%
+  data.table::melt(id = "MSHA_MINE_ID", variable.name = "year_quarter", value.name = "seam_height_in") %>%
+  dplyr::mutate(seam_height_in = as.numeric(seam_height_in),
+                MINE_ID = as.double(MSHA_MINE_ID),
+                year = as.numeric(stringr::str_sub(year_quarter, 2, 5)),
+                quarter = as.numeric(stringr::str_sub(year_quarter, 7, 7))) %>%
+  dplyr::filter(!is.na(seam_height_in)) %>%
+  dplyr::select(MINE_ID, year, quarter, seam_height_in) %T>%
+  dplyr::glimpse()
 
 # Combine MSHA and EIA union status data ----------------------------------
 
@@ -72,6 +111,8 @@ mine_panel <- msha_panel %>%
                     by = "MINE_ID") %>%
   dplyr::left_join(eia_panel_cleaned,
                    by = c("MINE_ID", "year")) %>%
+  dplyr::left_join(capiq_coalseam_long,
+                   by = c("MINE_ID", "year", "quarter")) %>%
   dplyr::mutate(controller_size_100FTEs = sum(size_100FTEs, na.rm = TRUE),
                 ln_controller_size_100FTEs = log(controller_size_100FTEs),
                 controller_size_100employees = sum(size_100employees, na.rm = TRUE),

@@ -6,36 +6,36 @@
                          &\multicolumn{1}{c}{\shortstack{(1)\\2000-2004}}&\multicolumn{1}{c}{\shortstack{(2)\\2005-2009}}&\multicolumn{1}{c}{\shortstack{(3)\\2010-2015}}&\multicolumn{1}{c}{\shortstack{(4)\\2016-2022}}&\multicolumn{1}{c}{\shortstack{(5)\\2000-2010}}&\multicolumn{1}{c}{\shortstack{(6)\\2011-2022}}&\multicolumn{1}{c}{\shortstack{(7)\\2000-2022}}\\
 \hline
                          &                     &                     &                     &                     &                     &                     &                     \\
-Union=1                  &       0.571\sym{*}  &       0.807         &       1.505\sym{***}&       1.250         &       0.692\sym{*}  &       1.412\sym{***}&       0.912         \\
+Union=1                  &       0.571         &       0.807         &       1.505\sym{**} &       1.250         &       0.692         &       1.412\sym{***}&       0.912         \\
                          &     (0.170)         &     (0.198)         &     (0.208)         &     (0.243)         &     (0.148)         &     (0.146)         &     (0.110)         \\
 [1em]
-Mine Size                &       0.867\sym{**} &       0.947         &       0.947\sym{***}&       0.930\sym{***}&       0.919\sym{***}&       0.944\sym{***}&       0.918\sym{***}\\
+Mine Size                &       0.867\sym{*}  &       0.947         &       0.947\sym{***}&       0.930\sym{**} &       0.919\sym{**} &       0.944\sym{**} &       0.918\sym{***}\\
                          &     (0.049)         &     (0.040)         &     (0.015)         &     (0.025)         &     (0.026)         &     (0.017)         &     (0.019)         \\
 [1em]
-Union=1 $\times$ Mine Size&       1.128\sym{*}  &       0.996         &       0.986         &       1.089\sym{**} &       1.052         &       1.019         &       1.051\sym{**} \\
+Union=1 $\times$ Mine Size&       1.128         &       0.996         &       0.986         &       1.089\sym{*}  &       1.052         &       1.019         &       1.051\sym{*}  \\
                          &     (0.080)         &     (0.051)         &     (0.022)         &     (0.039)         &     (0.042)         &     (0.023)         &     (0.023)         \\
 [1em]
-ln(Controller Size)      &       0.896\sym{*}  &       0.820\sym{***}&       0.839\sym{***}&       0.936         &       0.847\sym{***}&       0.888\sym{***}&       0.860\sym{***}\\
+ln(Controller Size)      &       0.896         &       0.820\sym{***}&       0.839\sym{***}&       0.936         &       0.847\sym{***}&       0.888\sym{***}&       0.860\sym{***}\\
                          &     (0.056)         &     (0.042)         &     (0.021)         &     (0.053)         &     (0.039)         &     (0.031)         &     (0.029)         \\
 [1em]
-Mine Age                 &       1.000         &       0.996         &       0.993\sym{***}&       0.999         &       0.997         &       0.996         &       0.996         \\
+Mine Age                 &       1.000         &       0.996         &       0.993\sym{**} &       0.999         &       0.997         &       0.996         &       0.996         \\
                          &     (0.006)         &     (0.004)         &     (0.002)         &     (0.005)         &     (0.004)         &     (0.003)         &     (0.003)         \\
 [1em]
-Productivity             &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         &       1.000\sym{**} &       1.000         \\
+Productivity             &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         &       1.000\sym{*}  &       1.000         \\
                          &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         \\
 [1em]
-Penalty Pts Last 4 Qtrs  &       0.989         &       1.006         &       1.002         &       1.006\sym{**} &       1.005         &       1.004\sym{**} &       1.009\sym{***}\\
+Penalty Pts Last 4 Qtrs  &       0.989         &       1.006         &       1.002         &       1.006\sym{*}  &       1.005         &       1.004\sym{*}  &       1.009\sym{***}\\
                          &     (0.012)         &     (0.004)         &     (0.003)         &     (0.002)         &     (0.003)         &     (0.002)         &     (0.002)         \\
 [1em]
-Mine Subunit dummies     &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+Mine Subunit FE          &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
 [1em]
-MSHA Mine District dummies&         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+MSHA Mine District FE    &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
 [1em]
-Year-Quarter dummies     &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+Year-Quarter FE          &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
 \hline
-Observations             &         879         &        1094         &        1344         &        1338         &        2195         &        2460         &        4655         \\
+N                        &         879         &        1094         &        1344         &        1338         &        2195         &        2460         &        4655         \\
 \hline\hline
-\multicolumn{8}{l}{\footnotesize Exponentiated coefficients; Standard errors in parentheses}\\
-\multicolumn{8}{l}{\footnotesize \sym{*} \(p<0.10\), \sym{**} \(p<0.05\), \sym{***} \(p<0.01\)}\\
+\multicolumn{8}{l}{\footnotesize Exponentiated coefficients; standard errors in parentheses clustered at mine level.}\\
+\multicolumn{8}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
 \end{tabular}
 }

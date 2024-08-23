@@ -6,16 +6,16 @@
                          &\multicolumn{1}{c}{\shortstack{(1)\\2000-2004}}&\multicolumn{1}{c}{\shortstack{(2)\\2005-2009}}&\multicolumn{1}{c}{\shortstack{(3)\\2010-2015}}&\multicolumn{1}{c}{\shortstack{(4)\\2016-2022}}&\multicolumn{1}{c}{\shortstack{(5)\\2000-2010}}&\multicolumn{1}{c}{\shortstack{(6)\\2011-2022}}&\multicolumn{1}{c}{\shortstack{(7)\\2000-2022}}\\
 \hline
                          &                     &                     &                     &                     &                     &                     &                     \\
-Union=1                  &       0.248\sym{*}  &       0.611         &       0.711         &       0.527         &       0.602         &       0.646         &       0.705         \\
+Union=1                  &       0.248         &       0.611         &       0.711         &       0.527         &       0.602         &       0.646         &       0.705         \\
                          &     (0.185)         &     (0.282)         &     (0.377)         &     (0.219)         &     (0.271)         &     (0.265)         &     (0.260)         \\
 [1em]
-Mine Size                &       0.654\sym{**} &       0.790\sym{**} &       0.925         &       0.899\sym{**} &       0.784\sym{**} &       0.910\sym{**} &       0.873\sym{**} \\
+Mine Size                &       0.654\sym{*}  &       0.790\sym{*}  &       0.925         &       0.899\sym{*}  &       0.784\sym{*}  &       0.910\sym{*}  &       0.873\sym{*}  \\
                          &     (0.121)         &     (0.081)         &     (0.049)         &     (0.047)         &     (0.084)         &     (0.042)         &     (0.047)         \\
 [1em]
 Union=1 $\times$ Mine Size&       1.281         &       1.104         &       1.025         &       1.116         &       1.077         &       1.060         &       1.036         \\
                          &     (0.261)         &     (0.136)         &     (0.080)         &     (0.084)         &     (0.123)         &     (0.067)         &     (0.070)         \\
 [1em]
-ln(Controller Size)      &       1.057         &       1.020         &       0.903\sym{*}  &       0.787\sym{***}&       1.035         &       0.857\sym{***}&       0.941         \\
+ln(Controller Size)      &       1.057         &       1.020         &       0.903         &       0.787\sym{***}&       1.035         &       0.857\sym{**} &       0.941         \\
                          &     (0.076)         &     (0.051)         &     (0.055)         &     (0.051)         &     (0.048)         &     (0.050)         &     (0.039)         \\
 [1em]
 Mine Age                 &       1.016         &       1.006         &       0.995         &       0.999         &       1.004         &       0.998         &       1.000         \\
@@ -24,18 +24,18 @@ Mine Age                 &       1.016         &       1.006         &       0.9
 Productivity             &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         \\
                          &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         \\
 [1em]
-Penalty Pts Last 4 Qtrs  &       1.094\sym{**} &       1.015\sym{**} &       1.016\sym{***}&       1.026\sym{***}&       1.019\sym{***}&       1.020\sym{***}&       1.018\sym{***}\\
+Penalty Pts Last 4 Qtrs  &       1.094\sym{*}  &       1.015\sym{*}  &       1.016\sym{***}&       1.026\sym{***}&       1.019\sym{***}&       1.020\sym{***}&       1.018\sym{***}\\
                          &     (0.042)         &     (0.006)         &     (0.005)         &     (0.007)         &     (0.005)         &     (0.005)         &     (0.004)         \\
 [1em]
-Mine Subunit dummies     &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+Mine Subunit FE          &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
 [1em]
-MSHA Mine District dummies&         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+MSHA Mine District FE    &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
 [1em]
-Year-Quarter dummies     &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+Year-Quarter FE          &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
 \hline
-Observations             &        1048         &        1371         &        1700         &        1537         &        2702         &        2954         &        5656         \\
+N                        &        1048         &        1371         &        1700         &        1537         &        2702         &        2954         &        5656         \\
 \hline\hline
-\multicolumn{8}{l}{\footnotesize Exponentiated coefficients; Standard errors in parentheses}\\
-\multicolumn{8}{l}{\footnotesize \sym{*} \(p<0.10\), \sym{**} \(p<0.05\), \sym{***} \(p<0.01\)}\\
+\multicolumn{8}{l}{\footnotesize Exponentiated coefficients; standard errors in parentheses clustered at mine level.}\\
+\multicolumn{8}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
 \end{tabular}
 }

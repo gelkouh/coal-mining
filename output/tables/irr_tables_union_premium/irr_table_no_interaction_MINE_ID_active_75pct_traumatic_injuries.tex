@@ -1,0 +1,38 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{7}{c}}
+\hline\hline
+                         &\multicolumn{7}{c}{Dependent Variable: Traumatic Injury Count}                                                                                           \\
+                         &\multicolumn{1}{c}{\shortstack{(1)\\2000-2004}}&\multicolumn{1}{c}{\shortstack{(2)\\2005-2009}}&\multicolumn{1}{c}{\shortstack{(3)\\2010-2015}}&\multicolumn{1}{c}{\shortstack{(4)\\2016-2022}}&\multicolumn{1}{c}{\shortstack{(5)\\2000-2010}}&\multicolumn{1}{c}{\shortstack{(6)\\2011-2022}}&\multicolumn{1}{c}{\shortstack{(7)\\2000-2022}}\\
+\hline
+                         &                     &                     &                     &                     &                     &                     &                     \\
+Union=1                  &       0.540\sym{**} &       0.644\sym{***}&       0.914         &       1.186         &       0.610\sym{**} &       0.964         &       0.747\sym{*}  \\
+                         &     (0.127)         &     (0.080)         &     (0.161)         &     (0.167)         &     (0.093)         &     (0.135)         &     (0.089)         \\
+[1em]
+Mine Size                &       0.916\sym{*}  &       0.955         &       0.981         &       1.009         &       0.942\sym{*}  &       0.991         &       0.969         \\
+                         &     (0.035)         &     (0.030)         &     (0.020)         &     (0.027)         &     (0.026)         &     (0.018)         &     (0.019)         \\
+[1em]
+ln(Controller Size)      &       0.910         &       0.848\sym{***}&       0.817\sym{***}&       0.949         &       0.878\sym{***}&       0.857\sym{***}&       0.859\sym{***}\\
+                         &     (0.045)         &     (0.040)         &     (0.036)         &     (0.049)         &     (0.034)         &     (0.036)         &     (0.027)         \\
+[1em]
+Mine Age                 &       0.997         &       1.007         &       0.994         &       1.000         &       1.001         &       0.997         &       0.999         \\
+                         &     (0.004)         &     (0.005)         &     (0.003)         &     (0.004)         &     (0.004)         &     (0.004)         &     (0.003)         \\
+[1em]
+Productivity             &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         &       1.000         \\
+                         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         &     (0.000)         \\
+[1em]
+Penalty Pts Last 4 Qtrs  &       1.022         &       1.003         &       0.999         &       1.001         &       1.005         &       1.001         &       1.005\sym{*}  \\
+                         &     (0.014)         &     (0.004)         &     (0.003)         &     (0.003)         &     (0.003)         &     (0.002)         &     (0.002)         \\
+[1em]
+Mine Subunit FE          &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+[1em]
+MSHA Mine District FE    &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+[1em]
+Year-Quarter FE          &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+\hline
+N                        &         879         &        1094         &        1344         &        1338         &        2195         &        2460         &        4655         \\
+\hline\hline
+\multicolumn{8}{l}{\footnotesize Exponentiated coefficients; standard errors in parentheses clustered at mine level.}\\
+\multicolumn{8}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}
