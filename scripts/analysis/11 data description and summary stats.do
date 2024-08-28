@@ -67,6 +67,7 @@ preserve
 	save `union_safety_temp', replace
 restore
 preserve 
+	keep if union == 0
 	collapse (sum) traumatic_injuries ss_violations labor_hours, by(MINE_ID_active_90pct year_quarter)
 	
 	tempfile safety_temp
@@ -91,10 +92,11 @@ graph twoway
 	lpoly traumatic_injury_rate year_quarter if union == 0, msize(vsmall) bwidth(0.25) ||
 	lpoly share_active_90pct year_quarter if mine_life_series == 1, msize(vsmall) yaxis(2) lpattern(".-") bwidth(0.25)
 		
+	xlabel(2000 2005 2010 2015 2022)
 	yscale(r(0.015 0.055))
 	ylabel(0 "0%" .05 "5%" .10 "10%" .15 "15%" .2 "20%", axis(2) angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
 	ylabel(, angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
-	legend(rows(2) region(lstyle(none)) size(small) symxsize(medium) order(1 "Traum. Inj. Rate: Union" 2 "Traum. Inj. Rate: Mines in {&ge} 90 Pct Qtrs 2000-2022" 3 "Traum. Inj. Rate: Nonunion" 4 "Share of Mines in {&ge} 90 Pct Qtrs 2000-2022"))
+	legend(rows(2) region(lstyle(none)) size(small) symxsize(medium) order(1 "Traum. Inj. Rate: Union" 2 "Traum. Inj. Rate: Mines in {&ge} 90 Pct Qtrs 2000-2022, Nonunion" 3 "Traum. Inj. Rate: Nonunion" 4 "Share of Mines in {&ge} 90 Pct Qtrs 2000-2022"))
 
 	ytitle("Injuries per 2,000 Hours Worked")
 	ytitle("Share of Mines Active in {&ge} 90 Pct Qtrs 2000-2022", axis(2))
@@ -117,6 +119,7 @@ graph twoway
 	line traumatic_injury_rate year_quarter if union == 0, msize(vsmall) ||
 	line share_active_90pct year_quarter if mine_life_series == 1, msize(vsmall) yaxis(2) lpattern(".-")
 		
+	xlabel(2000 2005 2010 2015 2022)
 	yscale(r(0.015 0.055))
 	ylabel(0 "0%" .05 "5%" .10 "10%" .15 "15%" .2 "20%", axis(2) angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
 	ylabel(, angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
@@ -132,6 +135,14 @@ graph twoway
 graph export "${output_figure}\summary_stat_figures\union_premium_comp_change_trends.png", replace
 
 **# Coal demand and production trends
+use "${input}\03 mine-quarter panel, union safety analysis.dta", clear 
+
+collapse (sum) coal_production_tons, by(year)
+gen und_bit_production = coal_production_tons / 1000000
+
+tempfile und_bit_production_temp
+save `und_bit_production_temp', replace
+
 import delimited "${data_path}\EIA\Coal Demand and Production\coal-consumption-by-major-end-users.csv", clear rowrange(7) varnames(6)
 rename v1 year
 keep if inrange(year, 2000, 2022)
@@ -147,20 +158,26 @@ keep if inrange(year, 2000, 2022)
 keep year total_production
 replace total_production = total_production / 1000000
 merge 1:1 year using `consumption_temp', assert(3) nogen
+merge 1:1 year using `und_bit_production_temp', assert(3) nogen
+gen und_bit_production_share = und_bit_production / total_production
 
 #d ;
 graph twoway 
 	line total_consumption year, msize(vsmall) ||
-	line total_production year, msize(vsmall) lpattern("-")
+	line total_production year, msize(vsmall) lpattern("-") ||
+	line und_bit_production_share year, msize(vsmall) yaxis(2) lpattern(".-")
 		
+	xlabel(2000 2005 2010 2015 2022)
+	ylabel(0.3 "30%" .32 "32%" .34 "34%" .36 "36%" .38 "38%", axis(2) angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
 	ylabel(, angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
-	legend(rows(1) region(lstyle(none)) size(small) symxsize(medium) order(1 "United States Coal Consumption" 2 "United States Coal Production"))
+	legend(rows(2) region(lstyle(none)) size(small) symxsize(medium) order(1 "United States Coal Consumption" 2 "United States Coal Production" 3 "Share of Coal Produced by Underground Bituminous Mines"))
 
 	ytitle("Coal (million short tons)")
+	ytitle("Underground Bituminous Mine Production Share", axis(2))
 	xtitle("")
 		
 	note(
-	"Source: EIA."
+	"Sources: EIA, MSHA."
 	, size(vsmall) span)
 	
 	graphregion(color(white))
@@ -188,7 +205,7 @@ graph twoway
 	xtitle("")
 	
 	note(
-	"Note: Office workers included starting in 1973"
+	"Note: Office workers included starting in 1973."
 	" "
 	"Source: MSHA."
 	, size(vsmall) span)
