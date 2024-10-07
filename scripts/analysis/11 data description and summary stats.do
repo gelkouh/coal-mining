@@ -61,14 +61,22 @@ collect export "${output_table}\summary_stat_tables\summ_stats_embed.tex", repla
 
 **# Union safety trend, non-union safety trend, 90 pct trend, composition trend (MSHA, EIA)
 preserve 
-	collapse (sum) traumatic_injuries ss_violations labor_hours, by(union year_quarter)
+	keep if union == 1
+	collapse (sum) traumatic_injuries_union=traumatic_injuries labor_hours_union=labor_hours, by(year_quarter)
 	
 	tempfile union_safety_temp
 	save `union_safety_temp', replace
 restore
 preserve 
 	keep if union == 0
-	collapse (sum) traumatic_injuries ss_violations labor_hours, by(MINE_ID_active_90pct year_quarter)
+	collapse (sum) traumatic_injuries_nonunion=traumatic_injuries labor_hours_nonunion=labor_hours, by(year_quarter)
+	
+	tempfile nonunion_safety_temp
+	save `nonunion_safety_temp', replace
+restore
+preserve 
+	keep if union == 0 & MINE_ID_active_90pct == 1
+	collapse (sum) traumatic_injuries_long=traumatic_injuries labor_hours_long=labor_hours, by(year_quarter)
 	
 	tempfile safety_temp
 	save `safety_temp', replace
@@ -79,26 +87,27 @@ collapse (sum) MINE_ID_active_90pct mine_counter, by(year_quarter)
 gen share_active_90pct = MINE_ID_active_90pct / mine_counter
 gen byte mine_life_series = 1
 
-append using `union_safety_temp'
-append using `safety_temp'
+merge 1:1 year_quarter using `union_safety_temp', assert(3) nogen
+merge 1:1 year_quarter using `nonunion_safety_temp', assert(3) nogen
+merge 1:1 year_quarter using `safety_temp', assert(3) nogen
 
-gen traumatic_injury_rate = 2000*(traumatic_injuries/labor_hours)
+gen traumatic_injury_rate_diff_all = 2000*(traumatic_injuries_nonunion/labor_hours_nonunion) - 2000*(traumatic_injuries_union/labor_hours_union)
+gen traumatic_injury_rate_diff_long = 2000*(traumatic_injuries_long/labor_hours_long) - 2000*(traumatic_injuries_union/labor_hours_union)
 
-// Note: Trends are smoothed with an Epanechnikov kernel function with kernel bandwidth of 0.25 (equivalent to 1 quarter).
 #d ;
 graph twoway 
-	lpoly traumatic_injury_rate year_quarter if union == 1, msize(vsmall) bwidth(0.25) ||
-	lpoly traumatic_injury_rate year_quarter if MINE_ID_active_90pct == 1, msize(vsmall) lpattern("-") bwidth(0.25) ||
-	lpoly traumatic_injury_rate year_quarter if union == 0, msize(vsmall) bwidth(0.25) ||
-	lpoly share_active_90pct year_quarter if mine_life_series == 1, msize(vsmall) yaxis(2) lpattern(".-") bwidth(0.25)
+	lpoly traumatic_injury_rate_diff_all year_quarter, msize(vsmall) bwidth(0.25) ||
+	lpoly share_active_90pct year_quarter, msize(vsmall) yaxis(2) lpattern(".-") bwidth(0.25) ||
+	lpoly traumatic_injury_rate_diff_long year_quarter, msize(vsmall) lpattern("-") bwidth(0.25)
 		
+	yline(0, lcolor(black) lwidth(vthin))
 	xlabel(2000 2005 2010 2015 2022)
-	yscale(r(0.015 0.055))
-	ylabel(0 "0%" .05 "5%" .10 "10%" .15 "15%" .2 "20%", axis(2) angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
 	ylabel(, angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
-	legend(rows(2) region(lstyle(none)) size(small) symxsize(medium) order(1 "Traum. Inj. Rate: Union" 2 "Traum. Inj. Rate: Mines in {&ge} 90 Pct Qtrs 2000-2022, Nonunion" 3 "Traum. Inj. Rate: Nonunion" 4 "Share of Mines in {&ge} 90 Pct Qtrs 2000-2022"))
+	ysc(titlegap(5))
+	ylabel(0 "0%" .05 "5%" .10 "10%" .15 "15%" .2 "20%", axis(2) angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
+	legend(rows(2) region(lstyle(none)) size(small) symxsize(medium) order(1 "Union Safety Premium: All Mines" 3 "Share of Mines in {&ge} 90 Pct Qtrs 2000-2022" 2 "Union Safety Premium: Nonunion Mines in {&ge} 90 Pct Qtrs 2000-2022"))
 
-	ytitle("Injuries per 2,000 Hours Worked")
+	ytitle("Nonunion - Union Injuries per 2,000 Hours Worked")
 	ytitle("Share of Mines Active in {&ge} 90 Pct Qtrs 2000-2022", axis(2))
 	xtitle("")
 	
@@ -111,28 +120,6 @@ graph twoway
 ;
 #d cr
 graph export "${output_figure}\summary_stat_figures\union_premium_comp_change_trends_smooth.png", replace
-
-#d ;
-graph twoway 
-	line traumatic_injury_rate year_quarter if union == 1, msize(vsmall) ||
-	line traumatic_injury_rate year_quarter if MINE_ID_active_90pct == 1, msize(vsmall) lpattern("-") ||
-	line traumatic_injury_rate year_quarter if union == 0, msize(vsmall) ||
-	line share_active_90pct year_quarter if mine_life_series == 1, msize(vsmall) yaxis(2) lpattern(".-")
-		
-	xlabel(2000 2005 2010 2015 2022)
-	yscale(r(0.015 0.055))
-	ylabel(0 "0%" .05 "5%" .10 "10%" .15 "15%" .2 "20%", axis(2) angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
-	ylabel(, angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
-	legend(rows(2) region(lstyle(none)) size(small) symxsize(medium) order(1 "Traum. Inj. Rate: Union" 2 "Traum. Inj. Rate: Mines in {&ge} 90 Pct Qtrs 2000-2022" 3 "Traum. Inj. Rate: Nonunion" 4 "Share of Mines in {&ge} 90 Pct Qtrs 2000-2022"))
-
-	ytitle("Injuries per 2,000 Hours Worked")
-	ytitle("Share of Mines Active in {&ge} 90 Pct of Qtrs 2000-2022", axis(2))
-	xtitle("")
-	
-	graphregion(color(white))
-;
-#d cr
-graph export "${output_figure}\summary_stat_figures\union_premium_comp_change_trends.png", replace
 
 **# Coal demand and production trends
 use "${input}\03 mine-quarter panel, union safety analysis.dta", clear 
@@ -164,20 +151,16 @@ gen und_bit_production_share = und_bit_production / total_production
 #d ;
 graph twoway 
 	line total_consumption year, msize(vsmall) ||
-	line total_production year, msize(vsmall) lpattern("-") ||
-	line und_bit_production_share year, msize(vsmall) yaxis(2) lpattern(".-")
-		
+	line total_production year, msize(vsmall) lpattern("-")
 	xlabel(2000 2005 2010 2015 2022)
-	ylabel(0.3 "30%" .32 "32%" .34 "34%" .36 "36%" .38 "38%", axis(2) angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
 	ylabel(, angle(0) glwidth(vthin) glcolor(gs14) format(%8.0gc))
-	legend(rows(2) region(lstyle(none)) size(small) symxsize(medium) order(1 "United States Coal Consumption" 2 "United States Coal Production" 3 "Share of Coal Produced by Underground Bituminous Mines"))
+	legend(rows(1) region(lstyle(none)) size(small) symxsize(medium) order(1 "United States Coal Consumption" 2 "United States Coal Production"))
 
 	ytitle("Coal (million short tons)")
-	ytitle("Underground Bituminous Mine Production Share", axis(2))
 	xtitle("")
 		
 	note(
-	"Sources: EIA, MSHA."
+	"Sources: EIA."
 	, size(vsmall) span)
 	
 	graphregion(color(white))

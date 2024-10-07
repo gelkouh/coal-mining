@@ -126,19 +126,19 @@ eststo: qui ivpoisson cfunction traumatic_injuries (ss_violation_rate = district
 esttab using "${output_table}\cf_tables\cf_table_inj_viols_embed.tex", label se(%10.3f) star(* 0.05 ** 0.01 *** 0.001) replace ///
 mtitles("\shortstack{(1)}" "\shortstack{(2)}" "\shortstack{(3)}") ///
 prehead("{ \def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi} \begin{tabular}{l*{3}{c}} \hline\hline") ///
-posthead("\hline \\ \multicolumn{3}{c}{\textit{A. Traumatic Injury Count}} \\") ///
+posthead("\hline \\ \multicolumn{3}{l}{\textit{A. Traumatic Injury Count}} \\") ///
 keep(ss_violation_rate) ///
 fragment varwidth(25) eform eqlabel("") nonotes stats(noobs, labels(" ")) nolines nonumbers
 
 esttab using "${output_table}\cf_tables\cf_table_inj_viols_embed.tex", nonumbers label se(%10.3f) star(* 0.05 ** 0.01 *** 0.001) append ///
 nomtitles ///
-posthead("\hline \\ \multicolumn{3}{c}{\textit{B. S\&S Viol Rate}} \\") ///
+posthead("\hline \\ \multicolumn{3}{l}{\textit{B. S\&S Viol Rate}} \\") ///
 keep(district_ss_viols_iv penalty_points_prev4qtrs) ///
 fragment varwidth(25) eqlabel("") nonotes stats(noobs, labels(" ")) nolines nonumbers
 
 esttab using "${output_table}\cf_tables\cf_table_inj_viols_embed.tex", nonumbers se(%10.3f) star(* 0.05 ** 0.01 *** 0.001) append ///
 nomtitles ///
-posthead("\hline \\ \multicolumn{3}{c}{\textit{C. Tests for Endogeneity of Covariates}} \\") ///
+posthead("\hline \\ \multicolumn{3}{l}{\textit{C. Tests for Endogeneity of Covariates}} \\") ///
 keep(c_ss_violation_rate) ///
 coeflabels(c_ss_violation_rate "S\&S Viol Rate") ///
 fragment varwidth(25) eqlabel("") nonotes stats(noobs, labels(" ")) nolines nonumbers
@@ -204,9 +204,9 @@ reg MINE_ID_active_qtrs_ln msha_office_act_qtrs_iv, robust
 	local firststageFstat = e(F)
 	local nobs = e(N)
 	binscatter MINE_ID_active_qtrs_ln msha_office_act_qtrs_iv, ///
-		xtitle("ln(1 / (S&S Violation Rate Same MSHA Office))") ///
+		xtitle("ln(1 / Mean Active Quarters 2000-2022 Same MSHA Office)") ///
 		ytitle("ln(Active Quarters 2000-2022)") ///
-		note("Binscatter: `nobs' mines" "First-stage F-statistic: `: di %5.2f `firststageFstat''") 
+		note("Binscatter: `nobs' mines") 
 	graph export "${output_figure}\binscatters\binscatter_mine_level_msha_office_first_stage.png", replace
 
 reg MINE_ID_active_qtrs_ln MINE_ID_max_coal_seam_ln, robust
@@ -215,7 +215,7 @@ reg MINE_ID_active_qtrs_ln MINE_ID_max_coal_seam_ln, robust
 	binscatter MINE_ID_active_qtrs_ln MINE_ID_max_coal_seam_ln, ///
 		xtitle("ln(Max Coal Seam Height)") ///
 		ytitle("ln(Active Quarters 2000-2022)") ///
-		note("Binscatter: `nobs' mines" "First-stage F-statistic: `: di %5.2f `firststageFstat''") 
+		note("Binscatter: `nobs' mines") 
 	graph export "${output_figure}\binscatters\binscatter_mine_level_coal_seam_first_stage.png", replace
 	
 **# 1b.i
@@ -292,22 +292,22 @@ lab var district_ss_viols_iv "1 / (S\&S Viol Rate in Dist)"
 esttab using "${output_table}\cf_tables\cf_table_inj_viols_int_embed.tex", label se(%10.3f) star(* 0.05 ** 0.01 *** 0.001) replace ///
 mtitles("\shortstack{(1)}" "\shortstack{(2)}" "\shortstack{(3)}") ///
 prehead("{ \def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi} \begin{tabular}{l*{3}{c}} \hline\hline") ///
-posthead("\hline \\ \multicolumn{3}{c}{\textit{A. Traumatic Injury Count}} \\") ///
+posthead("\hline \\ \multicolumn{3}{l}{\textit{A. Traumatic Injury Count}} \\") ///
 keep(ss_violation_rate endog_interaction) ///
 fragment varwidth(25) eform eqlabel("") nonotes stats(noobs, labels(" ")) nolines nonumbers
 
-lab var ss_violation_rate "\hline \\\ \multicolumn{3}{c}{\textit{B. S\&S Viol Rate}} \\\"
-lab var endog_interaction "\hline \\\ \multicolumn{3}{c}{\textit{C. Act Qtrs $\times$ S\&S Viol Rate}} \\\"
+lab var ss_violation_rate "\hline \\\ \multicolumn{3}{l}{\textit{B. S\&S Viol Rate}} \\\"
+lab var endog_interaction "\hline \\\ \multicolumn{3}{l}{\textit{C. Act Qtrs $\times$ S\&S Viol Rate}} \\\"
 
 esttab using "${output_table}\cf_tables\cf_table_inj_viols_int_embed.tex", nonumbers label se(%10.3f) star(* 0.05 ** 0.01 *** 0.001) append ///
 nomtitles ///
-posthead("\hline \\ \multicolumn{3}{c}{\textit{B. S\&S Viol. Rate}} \\") ///
+posthead("\hline \\ \multicolumn{3}{l}{\textit{B. S\&S Viol. Rate}} \\") ///
 keep(district_ss_viols_iv penalty_points_prev4qtrs iv_interaction MINE_ID_max_coal_seam) ///
 fragment varwidth(25) eqlabel("") nonotes stats(noobs, labels(" ")) nolines nonumbers
 
 esttab using "${output_table}\cf_tables\cf_table_inj_viols_int_embed.tex", nonumbers se(%10.3f) star(* 0.05 ** 0.01 *** 0.001) append ///
 nomtitles ///
-posthead("\hline \\ \multicolumn{3}{c}{\textit{D. Tests for Endogeneity of Covariates}} \\") ///
+posthead("\hline \\ \multicolumn{3}{l}{\textit{D. Tests for Endogeneity of Covariates}} \\") ///
 keep(c_ss_violation_rate c_endog_interaction) ///
 coeflabels(c_ss_violation_rate "S\&S Viol Rate" c_endog_interaction "Act Qtrs $\times$ S\&S Viol Rate") ///
 fragment varwidth(25) eqlabel("") nonotes stats(noobs, labels(" ")) nolines nonumbers
