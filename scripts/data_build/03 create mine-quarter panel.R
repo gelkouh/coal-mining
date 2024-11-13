@@ -126,12 +126,12 @@ mine_panel <- msha_panel %>%
                   dplyr::lag(penalty_points, n = 3L) +
                   dplyr::lag(penalty_points, n = 4L),
                 penalty_points_prev4qtrs = ifelse(is.na(penalty_points_prev4qtrs),
-                                                  (4/3) * (dplyr::lag(penalty_points, n = 1L) + 
+                                                  2 * (dplyr::lag(penalty_points, n = 1L) + 
                                                     dplyr::lag(penalty_points, n = 2L) +
                                                     dplyr::lag(penalty_points, n = 3L)),
                                                   penalty_points_prev4qtrs),
                 penalty_points_prev4qtrs = ifelse(is.na(penalty_points_prev4qtrs),
-                                                  2 * (dplyr::lag(penalty_points, n = 1L) + 
+                                                  3 * (dplyr::lag(penalty_points, n = 1L) + 
                                                     dplyr::lag(penalty_points, n = 2L)),
                                                   penalty_points_prev4qtrs),
                 penalty_points_prev4qtrs = ifelse(is.na(penalty_points_prev4qtrs),
