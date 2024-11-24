@@ -27,6 +27,14 @@ binscatter lnproductivity traumatic_injury_rate, ///
 	ytitle("ln(Productivity (tons/2,000 hrs))") ///
 	note("Binscatter: `nobs' mine-quarters") 
 graph export "${output_figure}\binscatters\binscatter_lnprod_inj.png", replace 
+
+binscatter lnproductivity traumatic_injury_rate, ///
+	absorb(year_quarter) ///
+	controls(i.MINE_ID) ///
+	xtitle("Traumatic Injury Rate") ///
+	ytitle("ln(Productivity (tons/2,000 hrs))") ///
+	note("Binscatter: `nobs' mine-quarters") 
+graph export "${output_figure}\binscatters\binscatter_lnprod_inj_FE.png", replace 
 	
 reg lnproductivity ss_violation_rate, robust
 local nobs = e(N)
@@ -35,6 +43,14 @@ binscatter lnproductivity ss_violation_rate, ///
 	ytitle("ln(Productivity (tons/2,000 hrs))") ///
 	note("Binscatter: `nobs' mine-quarters") 
 graph export "${output_figure}\binscatters\binscatter_lnprod_viols.png", replace 
+
+binscatter lnproductivity ss_violation_rate, ///
+	absorb(year_quarter) ///
+	controls(i.MINE_ID) ///
+	xtitle("S&S Violation Rate") ///
+	ytitle("ln(Productivity (tons/2,000 hrs))") ///
+	note("Binscatter: `nobs' mine-quarters") 
+graph export "${output_figure}\binscatters\binscatter_lnprod_viols_FE.png", replace 
 
 reg lnproductivity lntrauminjrate, robust
 local nobs = e(N)

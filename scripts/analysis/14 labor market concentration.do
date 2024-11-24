@@ -19,10 +19,10 @@ isid MINE_ID year_quarter
 
 foreach share_type in mines controllers {
 	preserve 
-		if ("`share_type'" == "controllers") gcollapse (sum) labor_hours, by(county_fips year_quarter CONTROLLER_ID)
+		if ("`share_type'" == "controllers") gcollapse (sum) labor_hours ss_violations traumatic_injuries, by(county_fips year_quarter CONTROLLER_ID)
 		gegen labor_hours_county = sum(labor_hours), by(county_fips year_quarter)
 		gen mine_labor_share_sq = (100 * (labor_hours / labor_hours_county))^2
-		gcollapse (sum) hhi=mine_labor_share_sq labor_hours, by(county_fips year_quarter)
+		gcollapse (sum) hhi=mine_labor_share_sq labor_hours ss_violations traumatic_injuries, by(county_fips year_quarter)
 		summ hhi
 		local mean = round(r(mean))
 		
@@ -53,6 +53,30 @@ foreach share_type in mines controllers {
 
 **# trends in national and local concentration
 use `controller_county_temp', clear
+
+foreach rate_var in ss_violations traumatic_injuries {
+	gen `rate_var'_rate = 2000 * (`rate_var' / labor_hours)
+	
+	if ("`rate_var'" == "ss_violations") local ylab = "S&S Violation Rate"
+	if ("`rate_var'" == "traumatic_injuries") local ylab = "Traumatic Injury Rate"
+	
+	reg `rate_var'_rate hhi, robust
+	local nobs = e(N)
+	
+	binscatter `rate_var'_rate hhi, ///
+		xtitle("HHI") ///
+		ytitle("`ylab'") ///
+		note("Binscatter: `nobs' mine-quarters") 
+	graph export "${output_figure}\labor_mkt_concentration\binscatter_`rate_var'_hhi.png", replace 
+	
+	binscatter `rate_var'_rate hhi, ///
+		 absorb(year_quarter) ///
+		 controls(i.county_fips) ///
+		xtitle("HHI") ///
+		ytitle("`ylab'") ///
+		note("Binscatter: `nobs' mine-quarters") 
+	graph export "${output_figure}\labor_mkt_concentration\binscatter_`rate_var'_hhi_FE.png", replace 
+}
 
 gen hhi_x_labor_hours = hhi*labor_hours
 gcollapse (sum) hhi_x_labor_hours labor_hours, by(year_quarter) 

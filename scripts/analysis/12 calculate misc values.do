@@ -38,6 +38,6 @@ foreach rate_var in ss_violations traumatic_injuries {
 	gen `rate_var'_per_FTE = 2000 * (`rate_var'/ labor_hours)
 }
 
-keep *_real_avg *_per_FTE
+keep *_real_avg *_per_FTE violations
 
 export delimited "${output_calculated_values}\misc_values.csv", replace
