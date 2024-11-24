@@ -226,6 +226,8 @@ violations_17_int <- violations_17_raw %>%
 violations_17 <- violations_17_int %>%
   dplyr::summarize(violations = n(), 
                    ss_violations = sum(ss_violation, na.rm = TRUE),
+                   violations_amt_due = sum(AMOUNT_DUE, na.rm = TRUE),
+                   violations_amt_paid = sum(AMOUNT_PAID, na.rm = TRUE),
                    .by = c(MINE_ID, year, quarter)) %T>%
   dplyr::glimpse()
 
